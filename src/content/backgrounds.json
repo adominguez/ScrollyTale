@@ -1,6 +1,0 @@
-[
-  { "id": "hero",   "image": "/assets/opt/bg-hero.webp", "imageMobile": "/assets/opt/bg-hero-mobile-test.webp" },
-  { "id": "forest", "image": "/assets/opt/bg-forest.webp" },
-  { "id": "cabin",  "image": "/assets/opt/bg-cabin.webp" },
-  { "id": "shop",   "image": "/assets/opt/bg-shop.webp" }
-]

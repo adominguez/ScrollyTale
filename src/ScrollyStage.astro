@@ -31,8 +31,6 @@
 // así que el motor cliente no necesita saber nada de esto. Si una escena
 // no define imageMobile, sigue usando image también en mobile.
 
-import '../styles/global.css';
-
 interface Background {
   id: string;
   image: string;
@@ -63,7 +61,7 @@ const { backgrounds, scrollSync = false } = Astro.props;
   <slot />
 </div>
 
-<script src="../scripts/scrollytelling.client.js"></script>
+<script src="./scrollytelling.client.js"></script>
 
 <style>
   .scrolly-stage {

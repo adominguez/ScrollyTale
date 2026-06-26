@@ -1,43 +1,68 @@
-# Astro Starter Kit: Minimal
+# ScrollyTale
+
+Motor de scrollytelling reutilizable para Astro: un fondo fijo a pantalla
+completa con crossfade/slide entre escenas, sincronizado con secciones que
+revelan su texto al entrar en el viewport.
+
+## Instalación
 
 ```sh
-npm create astro@latest -- --template minimal
+npm install github:adominguez/ScrollyTale
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+`astro` es una `peerDependency`: el proyecto que consume el paquete debe
+tener Astro instalado.
 
-## 🚀 Project Structure
+## Uso
 
-Inside of your Astro project, you'll see the following folders and files:
+```astro
+---
+import ScrollyStage from 'scrollytale/ScrollyStage.astro';
+import ScrollySection from 'scrollytale/ScrollySection.astro';
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+const backgrounds = [
+  { id: 'hero', image: '/assets/bg-hero.webp' },
+  { id: 'forest', image: '/assets/bg-forest.webp', imageMobile: '/assets/bg-forest-mobile.webp' },
+];
+---
+
+<ScrollyStage backgrounds={backgrounds}>
+  <ScrollySection bg="hero" align="center">
+    <h1>Hola</h1>
+  </ScrollySection>
+  <ScrollySection bg="forest" align="left" bgTransition="slide-horizontal" textTransition="fade-up">
+    <p>Contenido de la sección</p>
+  </ScrollySection>
+</ScrollyStage>
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+### `ScrollyStage`
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+| Prop          | Tipo         | Default | Descripción |
+| ------------- | ------------ | ------- | ----------- |
+| `backgrounds` | `Background[]` | — | `{ id, image, imageMobile? }`. `imageMobile` se usa por debajo de 560px si está definida. |
+| `scrollSync`  | `boolean`    | `false` | `false`: el fondo cambia con una transición de duración fija al activarse una sección. `true`: el progreso del fondo se calcula en cada frame a partir de la posición real de scroll (scrub). |
 
-Any static assets, like images, can be placed in the `public/` directory.
+### `ScrollySection`
 
-## 🧞 Commands
+| Prop             | Tipo | Default | Descripción |
+| ---------------- | ---- | ------- | ----------- |
+| `bg`             | `string` | — | id del fondo a activar (debe existir en `backgrounds`). |
+| `align`          | `'left' \| 'right' \| 'center'` | `'center'` | Alineación del bloque de texto. |
+| `minH`           | `string` | `'100vh'` | Alto mínimo de la sección (cualquier valor CSS). |
+| `id`             | `string` | — | id HTML opcional, para anclas. |
+| `bgTransition`   | `'fade' \| 'slide-horizontal' \| 'slide-vertical' \| 'fade-visibility'` | `'fade'` | Cómo entra el fondo al activarse esta sección. |
+| `textTransition` | `'fade-up' \| 'fade-down' \| 'slide-left' \| 'slide-right' \| 'zoom-in'` | `'fade-up'` | Cómo aparece el texto al entrar en el viewport. |
 
-All commands are run from the root of the project, from a terminal:
+## CSS personalizable
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+El motor usa la custom property `--ease` para las transiciones (fallback:
+`cubic-bezier(0.22, 0.61, 0.36, 1)` si el proyecto consumidor no la define).
+Para alinear las transiciones con el resto de tu sitio, defínela en tu
+propio CSS global:
 
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+```css
+:root {
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+```
