@@ -5,6 +5,11 @@
 // demo, para que el motor de scrollytelling.client.js (que lee esos
 // atributos en cada scroll) recoja el cambio sin recargar la página.
 //
+// El checkbox de scrollSync es la excepción: como es una prop de
+// <ScrollyStage> que el motor solo lee una vez al cargar el script, no se
+// puede mutar en caliente, así que ese control recarga la página con/sin
+// ?scrollSync=1 (ver playground.astro).
+//
 // Exportado como función para poder testearlo de forma aislada con
 // jsdom sin depender de que el navegador ejecute <script type="module">
 // (jsdom no soporta eso de forma fiable).
@@ -18,6 +23,7 @@ export function initPlaygroundControls(doc = document) {
   const bgSelect = doc.getElementById('bgTransitionSelect');
   const textSelect = doc.getElementById('textTransitionSelect');
   const triggerBtn = doc.getElementById('triggerBtn');
+  const scrollSyncToggle = doc.getElementById('scrollSyncToggle');
 
   function applySelection() {
     const bgT = bgSelect.value;
@@ -39,8 +45,33 @@ export function initPlaygroundControls(doc = document) {
     showingA = !showingA;
   });
 
+  // scrollSync es una prop de <ScrollyStage> (decide a la carga de la
+  // página qué motor usa el cliente), no un data-attribute mutable en
+  // caliente como bgTransition/textTransition. Por eso el checkbox no
+  // actualiza nada en vivo: recarga la página con/sin ?scrollSync=1.
+  scrollSyncToggle.addEventListener('change', () => {
+    const win = doc.defaultView;
+    const url = new URL(win.location.href);
+    if (scrollSyncToggle.checked) {
+      url.searchParams.set('scrollSync', '1');
+    } else {
+      url.searchParams.delete('scrollSync');
+    }
+    win.location.href = url.toString();
+  });
+
   applySelection();
 
   // Se exponen para poder inspeccionar el estado en tests.
-  return { sectionA, sectionB, innerA, innerB, bgSelect, textSelect, triggerBtn, applySelection };
+  return {
+    sectionA,
+    sectionB,
+    innerA,
+    innerB,
+    bgSelect,
+    textSelect,
+    triggerBtn,
+    scrollSyncToggle,
+    applySelection,
+  };
 }

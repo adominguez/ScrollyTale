@@ -14,11 +14,21 @@ import ScrollyStage from '../components/ScrollyStage.astro';
 import ScrollySection from '../components/ScrollySection.astro';
 import CharacterContent from '../components/content/CharacterContent.astro';
 
+// Sin esto, Astro prerenderiza la página (es el modo "static" por defecto)
+// y borra el query string antes de que el frontmatter lo vea, por lo que
+// scrollSync siempre saldría null aunque la URL lleve ?scrollSync=1.
+export const prerender = false;
+
 const backgroundEntries = await getCollection('backgrounds');
 const backgrounds = backgroundEntries.map((entry) => entry.data);
 
 const bgTransitions = ['fade', 'slide-horizontal', 'slide-vertical', 'fade-visibility'];
 const textTransitions = ['fade-up', 'fade-down', 'slide-left', 'slide-right', 'zoom-in'];
+
+// scrollSync es una prop de <ScrollyStage>, no un data-attribute que se
+// pueda mutar en caliente, así que para probarlo aquí se decide al cargar
+// la página vía ?scrollSync=1 (ver el checkbox + playground.client.js).
+const scrollSync = Astro.url.searchParams.get('scrollSync') === '1';
 ---
 
 <html lang="es">
@@ -58,6 +68,11 @@ const textTransitions = ['fade-up', 'fade-down', 'slide-left', 'slide-right', 'z
 
 			<button id="triggerBtn" type="button">Disparar transición ▶</button>
 
+			<label class="playground-field playground-field--checkbox">
+				<input type="checkbox" id="scrollSyncToggle" checked={scrollSync} />
+				<span>Sincronizar con el scroll (recarga la página)</span>
+			</label>
+
 			<p class="playground-hint">
 				O simplemente scrollea: cada vez que pases entre las dos secciones
 				de abajo, se aplicará la combinación seleccionada aquí arriba.
@@ -65,7 +80,7 @@ const textTransitions = ['fade-up', 'fade-down', 'slide-left', 'slide-right', 'z
 		</div>
 
 		<!-- ---------- Demo: dos secciones que vamos a alternar ---------- -->
-		<ScrollyStage backgrounds={backgrounds}>
+		<ScrollyStage backgrounds={backgrounds} scrollSync={scrollSync}>
 			<ScrollySection
 				bg="forest"
 				align="left"
@@ -129,6 +144,17 @@ const textTransitions = ['fade-up', 'fade-down', 'slide-left', 'slide-right', 'z
 				display: block;
 				margin-bottom: 12px;
 				font-size: 0.8rem;
+			}
+			.playground-field--checkbox {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				font-size: 0.72rem;
+				color: rgba(250, 245, 236, 0.85);
+				line-height: 1.3;
+			}
+			.playground-field--checkbox input {
+				flex-shrink: 0;
 			}
 			.playground-field span {
 				display: block;
