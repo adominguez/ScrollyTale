@@ -16,6 +16,14 @@
 //
 // El listado de fondos vive centralizado (p.ej. src/content/backgrounds.json)
 // y cada <ScrollySection bg="..."> solo referencia el id que le toca.
+//
+// scrollSync (opcional, default false): por defecto el fondo se anima una
+// vez (cuando una sección pasa a ser la más cercana al centro) con una
+// duración fija de CSS, sin importar si sigues scrolleando o paras en
+// seco. Con scrollSync={true} el motor cliente calcula en cada frame el
+// progreso real entre la sección anterior y la siguiente a partir de la
+// posición de scroll, y mueve/desvanece los fondos en proporción exacta
+// — como un scrub atado al scroll, sin temporizador propio.
 
 import '../styles/global.css';
 
@@ -26,12 +34,13 @@ interface Background {
 
 interface Props {
   backgrounds: Background[];
+  scrollSync?: boolean;
 }
 
-const { backgrounds } = Astro.props;
+const { backgrounds, scrollSync = false } = Astro.props;
 ---
 
-<div class="scrolly-stage" id="scrollyStage">
+<div class="scrolly-stage" id="scrollyStage" data-scroll-sync={scrollSync}>
   {backgrounds.map((bg, i) => (
     <div
       class="scrolly-bg"
@@ -73,6 +82,17 @@ const { backgrounds } = Astro.props;
      saliente (is-leaving) para que el slide la "tape" al avanzar. */
   .scrolly-bg.is-active {
     z-index: 2;
+  }
+
+  /* scrollSync: el motor cliente fija opacity/transform/z-index por JS en
+     cada frame con valores inline, así que desactivamos la transición CSS
+     para que el cambio sea instantáneo y siga al scroll 1:1, sin el
+     retardo que metería una transición de 0.9-1s. Astro serializa la prop
+     booleana como string ("true"/"false"), nunca omite el atributo, así
+     que hay que comparar el valor exacto — [data-scroll-sync] a secas
+     siempre haría match, también cuando vale "false". */
+  .scrolly-stage[data-scroll-sync='true'] .scrolly-bg {
+    transition: none;
   }
 
   /* ---- fade (default): solo opacidad, sin desplazamiento ---- */
