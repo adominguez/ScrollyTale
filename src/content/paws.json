@@ -1,0 +1,163 @@
+[
+  {
+    "id": "hero",
+    "order": 0,
+    "type": "hero",
+    "bgTarget": "hero",
+    "eyebrow": "Pequeños compañeros con historia",
+    "title": "Patitas<br>con historias",
+    "subtitle": "Para personas que viven con los cinco sentidos atentos."
+  },
+  {
+    "id": "rexy",
+    "order": 1,
+    "type": "character",
+    "bgTarget": "forest",
+    "align": "left",
+    "name": "Rexy",
+    "trait": "Valentía tranquila",
+    "line": "Un pequeño T-Rex articulado que se planta en una mesa y, sin hacer ruido, te dice que el día se puede llevar.",
+    "quote": "«No hace falta gritar para ser valiente.»",
+    "color": "#C9A6F0",
+    "image": "/assets/opt/rexy.webp",
+    "imageAlt": "Rexy, T-Rex articulado color púrpura",
+    "bgTransition": "slide-horizontal",
+    "textTransition": "slide-left"
+  },
+  {
+    "id": "bao",
+    "order": 2,
+    "type": "character",
+    "bgTarget": "cabin",
+    "align": "right",
+    "name": "Bao",
+    "trait": "Calma silenciosa",
+    "line": "En el universo PawTales, Bao es el silencio que hace falta a media tarde — el que recuerda que no todo tiene que ir rápido.",
+    "quote": "«A veces, lo único que hace falta es quedarse quieto.»",
+    "color": "#EAEAEA",
+    "image": "/assets/opt/bao.webp",
+    "imageAlt": "Bao, panda articulado blanco y negro",
+    "bgTransition": "fade",
+    "textTransition": "fade-up"
+  },
+  {
+    "id": "emery",
+    "order": 3,
+    "type": "character",
+    "bgTarget": "forest",
+    "align": "left",
+    "name": "Emery",
+    "trait": "Protege lo importante",
+    "line": "Un dragón pequeño, color esmeralda, con la responsabilidad seria de cuidar lo que importa. Llega con su huevo — porque alguien tiene que protegerlo.",
+    "quote": "«Lo pequeño también sabe cuidar.»",
+    "color": "#7FD9B0",
+    "image": "/assets/opt/emery.webp",
+    "imageAlt": "Emery, dragón esmeralda saliendo del huevo",
+    "bgTransition": "slide-vertical",
+    "textTransition": "zoom-in"
+  },
+  {
+    "id": "cora",
+    "order": 4,
+    "type": "character",
+    "bgTarget": "cabin",
+    "align": "right",
+    "name": "Cora",
+    "trait": "Amor y vínculo",
+    "line": "Cora no se guarda nada. Cuando alguien le importa, se nota — en cada detalle, en cada corazón que lleva puesto.",
+    "quote": "«Pienso en ti cuando te veo.»",
+    "color": "#F2A0A0",
+    "image": "/assets/opt/cora.webp",
+    "imageAlt": "Cora, dragón rojo con corazones",
+    "bgTransition": "fade",
+    "textTransition": "slide-right"
+  },
+  {
+    "id": "bruno",
+    "order": 5,
+    "type": "character",
+    "bgTarget": "forest",
+    "align": "left",
+    "name": "Bruno",
+    "trait": "Calma y lealtad",
+    "line": "Bruno no promete grandes gestos. Promete estar. Y a veces, eso es exactamente lo que se necesita.",
+    "quote": "«Aquí sigo, igual que ayer.»",
+    "color": "#8FC3F2",
+    "image": "/assets/opt/bruno.webp",
+    "imageAlt": "Bruno, dinosaurio azul y blanco",
+    "bgTransition": "slide-horizontal",
+    "textTransition": "fade-down"
+  },
+  {
+    "id": "auri",
+    "order": 6,
+    "type": "character",
+    "bgTarget": "cabin",
+    "align": "right",
+    "name": "Auri",
+    "trait": "Refugio y delicadeza",
+    "line": "Auri se mueve despacio, como si todo a su alrededor mereciera cuidado. Es el rincón blando del día.",
+    "quote": "«No pasa nada por ir más despacio.»",
+    "color": "#F2A6C4",
+    "image": "/assets/opt/auri.webp",
+    "imageAlt": "Auri, criatura rosa con aletas tipo ajolote",
+    "bgTransition": "fade",
+    "textTransition": "zoom-in"
+  },
+  {
+    "id": "unbox",
+    "order": 7,
+    "type": "unbox",
+    "bgTarget": "cabin",
+    "eyebrow": "La experiencia",
+    "unboxTitle": "Lo que llega no es una figura.<br>Es un capítulo.",
+    "items": [
+      {
+        "label": "La caja",
+        "text": "20×30, pensada para un unboxing íntimo."
+      },
+      {
+        "label": "La bolsa de papel",
+        "text": "Nunca plástico. Lo táctil importa."
+      },
+      {
+        "label": "El imán",
+        "text": "Con el logo de PawTales. Un gesto pequeño."
+      },
+      {
+        "label": "La ficha",
+        "text": "Su historia, su carácter — para tocar y guardar."
+      }
+    ],
+    "bgTransition": "fade",
+    "textTransition": "fade-up"
+  },
+  {
+    "id": "aby",
+    "order": 8,
+    "type": "character",
+    "bgTarget": "shop",
+    "align": "right",
+    "name": "Aby",
+    "trait": "Familia y hogar",
+    "line": "Aby es la sensación de llegar a casa. Pequeña, cálida, y exactamente donde tiene que estar.",
+    "quote": "«Bienvenido. Aquí también es tu sitio.»",
+    "color": "#F0C97A",
+    "image": "/assets/opt/aby.webp",
+    "imageAlt": "Aby, criatura amarilla y marrón con orejas",
+    "bgTransition": "slide-horizontal",
+    "textTransition": "slide-left"
+  },
+  {
+    "id": "closing",
+    "order": 9,
+    "type": "closing",
+    "bgTarget": "shop",
+    "eyebrow": "Eso es PawTales",
+    "manifesto": "Hacemos pequeños compañeros<br><em>para personas que viven<br>con los cinco sentidos atentos.</em><br>Cada uno tiene nombre, historia<br>y un lugar en el mundo.",
+    "ctaLabel": "Conoce a los Paws",
+    "ctaHref": "#stage",
+    "bgTransition": "fade",
+    "textTransition": "fade-up"
+  }
+]

@@ -1,0 +1,86 @@
+---
+// UnboxContent.astro
+// Contenido "listo para usar" para la franja de unboxing/experiencia.
+// Se coloca dentro de un <ScrollySection bg="..." align="center">.
+
+interface UnboxItem {
+  label: string;
+  text: string;
+}
+
+interface Props {
+  eyebrow?: string;
+  unboxTitle?: string;
+  items?: UnboxItem[];
+}
+
+const { eyebrow, unboxTitle, items = [] } = Astro.props;
+---
+
+{eyebrow && <p class="unbox-eyebrow">{eyebrow}</p>}
+{unboxTitle && <h2 class="unbox-title" set:html={unboxTitle} />}
+<div class="unbox-grid">
+  {items.map((item) => (
+    <div class="unbox-item">
+      <span>{item.label}</span>
+      <p>{item.text}</p>
+    </div>
+  ))}
+</div>
+
+<style>
+  .unbox-eyebrow {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    color: var(--amber);
+    margin-bottom: 18px;
+  }
+  .unbox-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    line-height: 1.25;
+    margin-bottom: 50px;
+    text-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  }
+  .unbox-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 22px;
+  }
+  .unbox-item {
+    background: rgba(20, 16, 12, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+    padding: 26px 18px;
+    text-align: left;
+    backdrop-filter: blur(6px);
+  }
+  .unbox-item span {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 8px;
+    color: var(--amber);
+  }
+  .unbox-item p {
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: rgba(250, 245, 236, 0.85);
+  }
+
+  @media (max-width: 900px) {
+    .unbox-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 560px) {
+    .unbox-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,188 @@
+---
+// playground.astro
+// Página de prueba para experimentar con los tipos de transición de
+// ScrollyStage / ScrollySection sin tocar JSON ni código. Tiene un panel
+// de controles fijo arriba con dos selects (transición de fondo y de
+// texto) que actualizan en vivo los data-attributes de la sección de
+// demo. También puedes scrollear normalmente para ver el efecto "real".
+//
+// Esto NO forma parte del flujo de producción: es solo una herramienta
+// de desarrollo. Puedes borrar este archivo sin afectar a index.astro.
+
+import { getCollection } from 'astro:content';
+import ScrollyStage from '../components/ScrollyStage.astro';
+import ScrollySection from '../components/ScrollySection.astro';
+import CharacterContent from '../components/content/CharacterContent.astro';
+
+const backgroundEntries = await getCollection('backgrounds');
+const backgrounds = backgroundEntries.map((entry) => entry.data);
+
+const bgTransitions = ['fade', 'slide-horizontal', 'slide-vertical', 'fade-visibility'];
+const textTransitions = ['fade-up', 'fade-down', 'slide-left', 'slide-right', 'zoom-in'];
+---
+
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Playground de transiciones — PawTales</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+	<body>
+		<!-- ---------- Panel de controles, fijo, siempre visible ---------- -->
+		<div class="playground-panel">
+			<p class="playground-title">🎛 Playground de transiciones</p>
+
+			<label class="playground-field">
+				<span>Transición de fondo</span>
+				<select id="bgTransitionSelect">
+					{bgTransitions.map((t) => (
+						<option value={t}>{t}</option>
+					))}
+				</select>
+			</label>
+
+			<label class="playground-field">
+				<span>Transición de texto</span>
+				<select id="textTransitionSelect">
+					{textTransitions.map((t) => (
+						<option value={t}>{t}</option>
+					))}
+				</select>
+			</label>
+
+			<button id="triggerBtn" type="button">Disparar transición ▶</button>
+
+			<p class="playground-hint">
+				O simplemente scrollea: cada vez que pases entre las dos secciones
+				de abajo, se aplicará la combinación seleccionada aquí arriba.
+			</p>
+		</div>
+
+		<!-- ---------- Demo: dos secciones que vamos a alternar ---------- -->
+		<ScrollyStage backgrounds={backgrounds}>
+			<ScrollySection
+				bg="forest"
+				align="left"
+				minH="100vh"
+				id="demoSectionA"
+				bgTransition="fade"
+				textTransition="fade-up"
+			>
+				<CharacterContent
+					name="Demo A"
+					trait="Sección de prueba 1"
+					line="Cambia los selectores de arriba y pulsa 'Disparar transición', o simplemente haz scroll hacia abajo para ver el efecto en movimiento real."
+					color="#C9A6F0"
+				/>
+			</ScrollySection>
+
+			<ScrollySection
+				bg="cabin"
+				align="right"
+				minH="100vh"
+				id="demoSectionB"
+				bgTransition="fade"
+				textTransition="fade-up"
+			>
+				<CharacterContent
+					name="Demo B"
+					trait="Sección de prueba 2"
+					line="Esta es la segunda sección. El tipo de transición que ves al llegar aquí es el que hayas elegido en el panel de control."
+					color="#7FD9B0"
+				/>
+			</ScrollySection>
+		</ScrollyStage>
+
+		<script>
+			import { initPlaygroundControls } from '../scripts/playground.client.js';
+			initPlaygroundControls();
+		</script>
+
+		<style>
+			.playground-panel {
+				position: fixed;
+				top: 16px;
+				right: 16px;
+				z-index: 500;
+				width: 260px;
+				background: rgba(20, 16, 12, 0.92);
+				border: 1px solid rgba(255, 255, 255, 0.15);
+				border-radius: 16px;
+				padding: 18px;
+				font-family: var(--font-display);
+				color: var(--cream);
+				backdrop-filter: blur(8px);
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+			}
+			.playground-title {
+				font-weight: 700;
+				font-size: 0.95rem;
+				margin-bottom: 14px;
+			}
+			.playground-field {
+				display: block;
+				margin-bottom: 12px;
+				font-size: 0.8rem;
+			}
+			.playground-field span {
+				display: block;
+				margin-bottom: 4px;
+				color: rgba(250, 245, 236, 0.7);
+				text-transform: uppercase;
+				letter-spacing: 0.04em;
+				font-size: 0.7rem;
+			}
+			.playground-field select {
+				width: 100%;
+				padding: 8px 10px;
+				border-radius: 8px;
+				border: 1px solid rgba(255, 255, 255, 0.2);
+				background: rgba(255, 255, 255, 0.08);
+				color: var(--cream);
+				font-family: inherit;
+				font-size: 0.85rem;
+			}
+			.playground-field select option {
+				color: #000;
+			}
+			#triggerBtn {
+				width: 100%;
+				padding: 10px;
+				border: none;
+				border-radius: 999px;
+				background: var(--amber);
+				color: var(--ink);
+				font-family: inherit;
+				font-weight: 700;
+				font-size: 0.85rem;
+				cursor: pointer;
+				margin-bottom: 12px;
+			}
+			#triggerBtn:hover {
+				transform: translateY(-1px);
+			}
+			.playground-hint {
+				font-size: 0.72rem;
+				line-height: 1.4;
+				color: rgba(250, 245, 236, 0.6);
+				font-family: var(--font-body);
+			}
+
+			@media (max-width: 600px) {
+				.playground-panel {
+					width: calc(100% - 32px);
+					top: auto;
+					bottom: 16px;
+					right: 16px;
+					left: 16px;
+				}
+			}
+		</style>
+	</body>
+</html>

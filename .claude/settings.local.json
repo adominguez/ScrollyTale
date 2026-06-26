@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm astro *)",
+      "Bash(npx --no-install playwright --version)",
+      "Bash(pnpm list *)",
+      "Bash(npm ls *)",
+      "Read(//Applications/**)",
+      "Bash(curl -sI -m 5 https://registry.npmjs.org)",
+      "Bash(pnpm dev *)",
+      "Bash(echo \"started with pid $!\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:4321/playground)"
+    ]
+  }
+}

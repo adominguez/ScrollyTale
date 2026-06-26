@@ -1,0 +1,119 @@
+---
+// index.astro
+// Esta página es el ÚNICO lugar que conoce la forma del contenido
+// (paws.json) y decide con qué componente "Content" rellenar cada
+// <ScrollySection>. Si mañana quieres montar OTRO scrollytelling con un
+// contenido completamente distinto, no tocas ScrollyStage ni
+// ScrollySection: escribes una página nueva que las combine a su manera.
+
+import { getCollection } from 'astro:content';
+import ScrollyStage from '../components/ScrollyStage.astro';
+import ScrollySection from '../components/ScrollySection.astro';
+import Nav from '../components/Nav.astro';
+import HeroContent from '../components/content/HeroContent.astro';
+import CharacterContent from '../components/content/CharacterContent.astro';
+import UnboxContent from '../components/content/UnboxContent.astro';
+import ClosingContent from '../components/content/ClosingContent.astro';
+
+const backgroundEntries = await getCollection('backgrounds');
+const backgrounds = backgroundEntries.map((entry) => entry.data);
+
+const pawEntries = await getCollection('paws');
+const panels = pawEntries
+	.map((entry) => entry.data)
+	.sort((a, b) => a.order - b.order);
+---
+
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="generator" content={Astro.generator} />
+		<title>PawTales — Patitas con historias</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+	<body>
+		<Nav />
+
+		<ScrollyStage backgrounds={backgrounds}>
+			{panels.map((panel) => {
+				switch (panel.type) {
+					case 'hero':
+						return (
+							<ScrollySection
+								bg={panel.bgTarget}
+								align="center"
+								bgTransition={panel.bgTransition}
+								textTransition={panel.textTransition}
+							>
+								<HeroContent
+									eyebrow={panel.eyebrow}
+									title={panel.title}
+									subtitle={panel.subtitle}
+								/>
+							</ScrollySection>
+						);
+					case 'character':
+						return (
+							<ScrollySection
+								bg={panel.bgTarget}
+								align={panel.align}
+								minH="110vh"
+								bgTransition={panel.bgTransition}
+								textTransition={panel.textTransition}
+							>
+								<CharacterContent
+									name={panel.name}
+									trait={panel.trait}
+									line={panel.line}
+									quote={panel.quote}
+									color={panel.color}
+									image={panel.image}
+									imageAlt={panel.imageAlt}
+								/>
+							</ScrollySection>
+						);
+					case 'unbox':
+						return (
+							<ScrollySection
+								bg={panel.bgTarget}
+								align="center"
+								bgTransition={panel.bgTransition}
+								textTransition={panel.textTransition}
+							>
+								<UnboxContent
+									eyebrow={panel.eyebrow}
+									unboxTitle={panel.unboxTitle}
+									items={panel.items}
+								/>
+							</ScrollySection>
+						);
+					case 'closing':
+						return (
+							<ScrollySection
+								bg={panel.bgTarget}
+								align="center"
+								id={panel.id}
+								bgTransition={panel.bgTransition}
+								textTransition={panel.textTransition}
+							>
+								<ClosingContent
+									eyebrow={panel.eyebrow}
+									manifesto={panel.manifesto}
+									ctaLabel={panel.ctaLabel}
+									ctaHref={panel.ctaHref}
+								/>
+							</ScrollySection>
+						);
+					default:
+						return null;
+				}
+			})}
+		</ScrollyStage>
+	</body>
+</html>

@@ -1,0 +1,166 @@
+---
+// ScrollyStage.astro
+// Wrapper reutilizable para montar un scrollytelling tipo Shorthand en
+// cualquier página. Se encarga de:
+//   1. Pintar el fondo fijo a pantalla completa con crossfade entre escenas.
+//   2. Envolver las <ScrollySection> que le pases como children.
+//   3. Cargar el script cliente que decide qué fondo mostrar según qué
+//      sección está más cerca del centro de la pantalla, y que revela
+//      cada sección al entrar en el viewport.
+//
+// Uso:
+//   <ScrollyStage backgrounds={backgrounds}>
+//     <ScrollySection bg="hero">...</ScrollySection>
+//     <ScrollySection bg="forest" align="left">...</ScrollySection>
+//   </ScrollyStage>
+//
+// El listado de fondos vive centralizado (p.ej. src/content/backgrounds.json)
+// y cada <ScrollySection bg="..."> solo referencia el id que le toca.
+
+import '../styles/global.css';
+
+interface Background {
+  id: string;
+  image: string;
+}
+
+interface Props {
+  backgrounds: Background[];
+}
+
+const { backgrounds } = Astro.props;
+---
+
+<div class="scrolly-stage" id="scrollyStage">
+  {backgrounds.map((bg, i) => (
+    <div
+      class="scrolly-bg"
+      class:list={[{ 'is-active': i === 0 }]}
+      data-bg={bg.id}
+      style={`background-image:url('${bg.image}')`}
+    ></div>
+  ))}
+  <div class="scrolly-overlay"></div>
+</div>
+
+<div class="scrolly-content">
+  <slot />
+</div>
+
+<script src="../scripts/scrollytelling.client.js"></script>
+
+<style>
+  .scrolly-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .scrolly-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    visibility: hidden;
+    z-index: 1;
+    transition:
+      opacity 1s ease-in-out,
+      transform 0.9s var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
+      visibility 0s;
+  }
+  /* La capa entrante (is-active) siempre queda por encima de la
+     saliente (is-leaving) para que el slide la "tape" al avanzar. */
+  .scrolly-bg.is-active {
+    z-index: 2;
+  }
+
+  /* ---- fade (default): solo opacidad, sin desplazamiento ---- */
+  .scrolly-bg.is-active {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(0, 0);
+  }
+
+  /* ---- slide-horizontal: entra/sale en el eje X ----
+     La dirección concreta (desde dónde entra) la decide el JS añadiendo
+     data-enter-from="left|right" en el momento del cambio, según el
+     sentido del scroll. */
+  .scrolly-bg[data-transition='slide-horizontal'] {
+    transform: translateX(0);
+  }
+  .scrolly-bg[data-transition='slide-horizontal']:not(.is-active)[data-enter-from='right'] {
+    transform: translateX(100%);
+  }
+  .scrolly-bg[data-transition='slide-horizontal']:not(.is-active)[data-enter-from='left'] {
+    transform: translateX(-100%);
+  }
+  .scrolly-bg[data-transition='slide-horizontal'].is-leaving[data-enter-from='right'] {
+    transform: translateX(-100%);
+  }
+  .scrolly-bg[data-transition='slide-horizontal'].is-leaving[data-enter-from='left'] {
+    transform: translateX(100%);
+  }
+  .scrolly-bg[data-transition='slide-horizontal'].is-active {
+    transform: translateX(0);
+  }
+
+  /* ---- slide-vertical: igual que arriba pero en el eje Y ---- */
+  .scrolly-bg[data-transition='slide-vertical']:not(.is-active)[data-enter-from='bottom'] {
+    transform: translateY(100%);
+  }
+  .scrolly-bg[data-transition='slide-vertical']:not(.is-active)[data-enter-from='top'] {
+    transform: translateY(-100%);
+  }
+  .scrolly-bg[data-transition='slide-vertical'].is-leaving[data-enter-from='bottom'] {
+    transform: translateY(-100%);
+  }
+  .scrolly-bg[data-transition='slide-vertical'].is-leaving[data-enter-from='top'] {
+    transform: translateY(100%);
+  }
+  .scrolly-bg[data-transition='slide-vertical'].is-active {
+    transform: translateY(0);
+  }
+
+  /* ---- fade-visibility: la entrante escala de 1.15 a 1 mientras hace fade-in;
+     la saliente solo se desvanece (fade-out), sin escalar. No depende de
+     la dirección del scroll, por eso no usa [data-enter-from]. ---- */
+  .scrolly-bg[data-transition='fade-visibility']:not(.is-active) {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+  .scrolly-bg[data-transition='fade-visibility'].is-leaving {
+    opacity: 0;
+    transform: scale(1);
+  }
+  .scrolly-bg[data-transition='fade-visibility'].is-active {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* Las capas con slide o zoom se ven en cuanto empiezan a entrar/salir,
+     no solo al terminar la transición (a diferencia del fade, que solo
+     usa opacity). Los estados concretos de opacidad de fade-visibility
+     de arriba tienen más especificidad y prevalecen sobre este forzado. */
+  .scrolly-bg[data-transition^='slide'],
+  .scrolly-bg[data-transition^='fade'] {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .scrolly-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(10, 8, 6, 0.35) 0%,
+      rgba(10, 8, 6, 0.55) 100%
+    );
+    pointer-events: none;
+    z-index: 5;
+  }
+  .scrolly-content {
+    position: relative;
+    z-index: 10;
+  }
+</style>

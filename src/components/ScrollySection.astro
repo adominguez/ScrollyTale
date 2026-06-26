@@ -1,0 +1,129 @@
+---
+// ScrollySection.astro
+// Una "diapositiva" del scrollytelling. Pone la mecánica (altura mínima,
+// qué fondo activar, alineación del texto, reveal on-scroll) y deja el
+// contenido completamente libre a través del slot por defecto: puedes
+// meter uno de los componentes "listos para usar" (HeroContent,
+// CharacterContent, UnboxContent, ClosingContent) o tu propio HTML.
+//
+// Props:
+//   bg             — id del fondo a activar (debe existir en backgrounds.json)
+//   align          — "left" | "right" | "center" (alineación del bloque de texto)
+//   minH           — alto mínimo de la sección (admite cualquier valor CSS, ej. "120vh")
+//   id             — id HTML opcional, útil para anclas (ej. id="cierre")
+//   bgTransition   — cómo entra el FONDO al activarse esta sección:
+//                       "fade"             (default) — solo opacidad
+//                       "slide-horizontal" — entra/sale en el eje X;
+//                                            el sentido (izq/der) lo decide
+//                                            automáticamente la dirección
+//                                            de scroll, no esta prop
+//                       "slide-vertical"   — igual que arriba, en el eje Y
+//                       "fade-visibility"          — entra escalando de 1.15 a 1
+//                                            con fade; simétrico, no
+//                                            depende de la dirección del
+//                                            scroll
+//   textTransition — cómo aparece el bloque de TEXTO de esta sección al
+//                    entrar en el viewport:
+//                       "fade-up"    (default) — fade + sube desde abajo
+//                       "fade-down"  — fade + baja desde arriba
+//                       "slide-left" — fade + entra desde la izquierda
+//                       "slide-right"— fade + entra desde la derecha
+//                       "zoom-in"    — fade + escala desde 0.92 a 1
+
+interface Props {
+  bg: string;
+  align?: 'left' | 'right' | 'center';
+  minH?: string;
+  id?: string;
+  bgTransition?: 'fade' | 'slide-horizontal' | 'slide-vertical' | 'fade-visibility';
+  textTransition?: 'fade-up' | 'fade-down' | 'slide-left' | 'slide-right' | 'zoom-in';
+}
+
+const {
+  bg,
+  align = 'center',
+  minH = '100vh',
+  id,
+  bgTransition = 'fade',
+  textTransition = 'fade-up',
+} = Astro.props;
+---
+
+<section
+  class="scrolly-section"
+  data-bg-target={bg}
+  data-bg-transition={bgTransition}
+  id={id}
+  style={`min-height:${minH}`}
+>
+  <div
+    class={`scrolly-inner scrolly-inner--${align}`}
+    data-text-transition={textTransition}
+  >
+    <slot />
+  </div>
+</section>
+
+<style>
+  .scrolly-section {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 0 clamp(20px, 6vw, 70px);
+  }
+  .scrolly-inner {
+    max-width: 560px;
+    opacity: 0;
+    transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+  }
+  .scrolly-inner.in-view {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  .scrolly-inner--center {
+    margin: 0 auto;
+    text-align: center;
+    max-width: 680px;
+  }
+  .scrolly-inner--left {
+    margin-right: auto;
+    text-align: left;
+  }
+  .scrolly-inner--right {
+    margin-left: auto;
+    text-align: right;
+  }
+
+  /* ---- variantes de textTransition: solo definen el estado de PARTIDA
+     (antes de in-view); el estado final siempre es opacity:1 / transform:none,
+     ya cubierto por .scrolly-inner.in-view arriba. ---- */
+  .scrolly-inner[data-text-transition='fade-up'] {
+    transform: translateY(28px);
+  }
+  .scrolly-inner[data-text-transition='fade-down'] {
+    transform: translateY(-28px);
+  }
+  .scrolly-inner[data-text-transition='slide-left'] {
+    transform: translateX(-50px);
+  }
+  .scrolly-inner[data-text-transition='slide-right'] {
+    transform: translateX(50px);
+  }
+  .scrolly-inner[data-text-transition='zoom-in'] {
+    transform: scale(0.92);
+  }
+
+  @media (max-width: 900px) {
+    .scrolly-inner--left,
+    .scrolly-inner--right {
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
+    }
+  }
+  @media (max-width: 560px) {
+    .scrolly-section {
+      padding: 0 22px;
+    }
+  }
+</style>

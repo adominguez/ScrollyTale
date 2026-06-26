@@ -1,0 +1,61 @@
+---
+// ClosingContent.astro
+// Contenido "listo para usar" para el cierre con manifiesto + CTA.
+// Se coloca dentro de un <ScrollySection bg="..." align="center" id="...">.
+
+interface Props {
+  eyebrow?: string;
+  manifesto?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+}
+
+const { eyebrow, manifesto, ctaLabel, ctaHref = '#' } = Astro.props;
+---
+
+{eyebrow && <p class="closing-eyebrow">{eyebrow}</p>}
+{manifesto && <h2 class="closing-manifesto" set:html={manifesto} />}
+{ctaLabel && <a class="closing-cta" href={ctaHref}>{ctaLabel}</a>}
+
+<style>
+  .closing-eyebrow {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    color: var(--amber);
+    margin-bottom: 18px;
+  }
+  .closing-manifesto {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(1.4rem, 3.2vw, 2.2rem);
+    line-height: 1.55;
+    text-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    margin-bottom: 48px;
+  }
+  .closing-manifesto :global(em) {
+    font-family: var(--font-script);
+    font-style: normal;
+    color: var(--amber);
+    font-size: 1.15em;
+    display: inline-block;
+    margin: 4px 0;
+  }
+  .closing-cta {
+    display: inline-block;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1rem;
+    background: var(--amber);
+    color: var(--ink);
+    padding: 16px 38px;
+    border-radius: 999px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    transition: transform 0.3s var(--ease);
+  }
+  .closing-cta:hover {
+    transform: translateY(-3px);
+  }
+</style>
