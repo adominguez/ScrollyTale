@@ -51,7 +51,8 @@ const backgrounds = [
 | `align`          | `'left' \| 'right' \| 'center'` | `'center'` | Alineación del bloque de texto. |
 | `minH`           | `string` | `'100vh'` | Alto mínimo de la sección (cualquier valor CSS). |
 | `id`             | `string` | — | id HTML opcional, para anclas. |
-| `bgTransition`   | `'fade' \| 'slide-horizontal' \| 'slide-vertical' \| 'fade-visibility'` | `'fade'` | Cómo entra el fondo al activarse esta sección. |
+| `bgTransition`   | `'fade' \| 'slide-horizontal' \| 'slide-vertical' \| 'fade-visibility' \| 'zoom-in' \| 'zoom-out'` | `'fade'` | Cómo entra el fondo al activarse esta sección. |
+| `bgZoomScale`    | `number` | `0.15` | Intensidad del efecto en `zoom-in`/`zoom-out` (fracción de escala respecto a 1). Sin efecto en el resto de `bgTransition`. |
 | `textTransition` | `'fade-up' \| 'fade-down' \| 'slide-left' \| 'slide-right' \| 'zoom-in'` | `'fade-up'` | Cómo aparece el texto al entrar en el viewport. |
 
 ## CSS personalizable

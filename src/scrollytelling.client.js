@@ -73,9 +73,10 @@
     layer.classList.remove('is-leaving');
     layer.removeAttribute('data-transition');
     layer.removeAttribute('data-enter-from');
+    layer.style.removeProperty('--bg-zoom-scale');
   }
 
-  function activateBackground(targetId, transitionType) {
+  function activateBackground(targetId, transitionType, zoomScale) {
     const incoming = bgLayers[targetId];
     const outgoing = bgLayers[currentBg];
     if (!incoming || incoming === outgoing) return;
@@ -90,11 +91,19 @@
       if (outgoing) outgoing.classList.remove('is-active');
       incoming.classList.add('is-active');
     } else {
-      // slide-horizontal / slide-vertical / fade-visibility: necesitamos
-      // marcar data-transition en ambas capas y, un frame más tarde, alternar
-      // is-active/is-leaving para que el navegador anime el cambio.
+      // slide-horizontal / slide-vertical / fade-visibility / zoom-in /
+      // zoom-out: necesitamos marcar data-transition en ambas capas y, un
+      // frame más tarde, alternar is-active/is-leaving para que el
+      // navegador anime el cambio.
       incoming.dataset.transition = transitionType;
       if (outgoing) outgoing.dataset.transition = transitionType;
+
+      // zoom-in/zoom-out leen la intensidad del efecto desde la sección
+      // (data-bg-zoom-scale) y la exponen como custom property en la capa
+      // entrante; el CSS la usa con un fallback (0.15) por si no llega.
+      if (transitionType === 'zoom-in' || transitionType === 'zoom-out') {
+        if (zoomScale) incoming.style.setProperty('--bg-zoom-scale', zoomScale);
+      }
 
       // Solo los slides dependen de la dirección del scroll (desde dónde
       // entra la capa nueva y hacia dónde se va la vieja). Los zooms son
@@ -161,8 +170,9 @@
     if (closest) {
       const target = closest.dataset.bgTarget;
       const transitionType = closest.dataset.bgTransition || 'fade';
+      const zoomScale = closest.dataset.bgZoomScale;
       if (target !== currentBg) {
-        activateBackground(target, transitionType);
+        activateBackground(target, transitionType, zoomScale);
       }
     }
   }
@@ -189,7 +199,7 @@
   // 0..1 entre ambas. No hace falta saber la dirección del scroll: como el
   // progreso es una posición (no un disparo puntual), si scrolleas hacia
   // arriba simplemente se recorre al revés.
-  function applySyncedTransition(layerA, layerB, transitionType, progress) {
+  function applySyncedTransition(layerA, layerB, transitionType, progress, zoomScale) {
     if (transitionType === 'slide-horizontal') {
       layerA.style.opacity = '1';
       layerA.style.transform = `translateX(${progress * -100}%)`;
@@ -205,6 +215,16 @@
       layerA.style.transform = 'scale(1)';
       layerB.style.opacity = String(progress);
       layerB.style.transform = `scale(${lerp(1.15, 1, progress)})`;
+    } else if (transitionType === 'zoom-in') {
+      layerA.style.opacity = String(1 - progress);
+      layerA.style.transform = 'scale(1)';
+      layerB.style.opacity = String(progress);
+      layerB.style.transform = `scale(${lerp(1 - zoomScale, 1, progress)})`;
+    } else if (transitionType === 'zoom-out') {
+      layerA.style.opacity = String(1 - progress);
+      layerA.style.transform = 'scale(1)';
+      layerB.style.opacity = String(progress);
+      layerB.style.transform = `scale(${lerp(1 + zoomScale, 1, progress)})`;
     } else {
       // fade
       layerA.style.opacity = String(1 - progress);
@@ -260,7 +280,8 @@
     progress = Math.min(1, Math.max(0, progress));
 
     const transitionType = sectionB.dataset.bgTransition || 'fade';
-    applySyncedTransition(layerA, layerB, transitionType, progress);
+    const zoomScale = parseFloat(sectionB.dataset.bgZoomScale) || 0.15;
+    applySyncedTransition(layerA, layerB, transitionType, progress, zoomScale);
   }
 
   /* ---------- rAF scroll loop ---------- */

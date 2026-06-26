@@ -172,12 +172,48 @@ const { backgrounds, scrollSync = false } = Astro.props;
     transform: scale(1);
   }
 
-  /* Las capas con slide o zoom se ven en cuanto empiezan a entrar/salir,
-     no solo al terminar la transición (a diferencia del fade, que solo
-     usa opacity). Los estados concretos de opacidad de fade-visibility
-     de arriba tienen más especificidad y prevalecen sobre este forzado. */
+  /* ---- zoom-in: la entrante escala desde (1 - --bg-zoom-scale) hasta 1
+     mientras hace fade-in, dando sensación de acercarse a la imagen; la
+     saliente solo se desvanece (fade-out), sin escalar. --bg-zoom-scale lo
+     fija el JS por capa a partir de la prop bgZoomScale de la sección
+     (fallback 0.15 si no llega). Simétrico, no depende de la dirección
+     del scroll. ---- */
+  .scrolly-bg[data-transition='zoom-in']:not(.is-active) {
+    opacity: 0;
+    transform: scale(calc(1 - var(--bg-zoom-scale, 0.15)));
+  }
+  .scrolly-bg[data-transition='zoom-in'].is-leaving {
+    opacity: 0;
+    transform: scale(1);
+  }
+  .scrolly-bg[data-transition='zoom-in'].is-active {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* ---- zoom-out: igual que zoom-in pero la entrante escala desde
+     (1 + --bg-zoom-scale) hasta 1, dando sensación de alejarse. ---- */
+  .scrolly-bg[data-transition='zoom-out']:not(.is-active) {
+    opacity: 0;
+    transform: scale(calc(1 + var(--bg-zoom-scale, 0.15)));
+  }
+  .scrolly-bg[data-transition='zoom-out'].is-leaving {
+    opacity: 0;
+    transform: scale(1);
+  }
+  .scrolly-bg[data-transition='zoom-out'].is-active {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* Las capas con slide, fade o zoom se ven en cuanto empiezan a
+     entrar/salir, no solo al terminar la transición (a diferencia del
+     fade puro, que solo usa opacity). Los estados concretos de opacidad
+     definidos arriba tienen más especificidad y prevalecen sobre este
+     forzado. */
   .scrolly-bg[data-transition^='slide'],
-  .scrolly-bg[data-transition^='fade'] {
+  .scrolly-bg[data-transition^='fade'],
+  .scrolly-bg[data-transition^='zoom'] {
     opacity: 1;
     visibility: visible;
   }

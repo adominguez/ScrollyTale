@@ -22,6 +22,15 @@
 //                                            con fade; simétrico, no
 //                                            depende de la dirección del
 //                                            scroll
+//                       "zoom-in"          — entra escalando desde
+//                                            (1 - bgZoomScale) hasta 1 con
+//                                            fade (se "acerca")
+//                       "zoom-out"         — entra escalando desde
+//                                            (1 + bgZoomScale) hasta 1 con
+//                                            fade (se "aleja")
+//   bgZoomScale    — cuánto se nota el efecto de "zoom-in"/"zoom-out" (0..1,
+//                    como fracción de la escala normal). Sin efecto en el
+//                    resto de bgTransition.
 //   textTransition — cómo aparece el bloque de TEXTO de esta sección al
 //                    entrar en el viewport:
 //                       "fade-up"    (default) — fade + sube desde abajo
@@ -35,7 +44,8 @@ interface Props {
   align?: 'left' | 'right' | 'center';
   minH?: string;
   id?: string;
-  bgTransition?: 'fade' | 'slide-horizontal' | 'slide-vertical' | 'fade-visibility';
+  bgTransition?: 'fade' | 'slide-horizontal' | 'slide-vertical' | 'fade-visibility' | 'zoom-in' | 'zoom-out';
+  bgZoomScale?: number;
   textTransition?: 'fade-up' | 'fade-down' | 'slide-left' | 'slide-right' | 'zoom-in';
 }
 
@@ -45,6 +55,7 @@ const {
   minH = '100vh',
   id,
   bgTransition = 'fade',
+  bgZoomScale = 0.15,
   textTransition = 'fade-up',
 } = Astro.props;
 ---
@@ -53,6 +64,7 @@ const {
   class="scrolly-section"
   data-bg-target={bg}
   data-bg-transition={bgTransition}
+  data-bg-zoom-scale={bgZoomScale}
   id={id}
   style={`min-height:${minH}`}
 >
