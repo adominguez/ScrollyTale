@@ -24,12 +24,19 @@
 // progreso real entre la sección anterior y la siguiente a partir de la
 // posición de scroll, y mueve/desvanece los fondos en proporción exacta
 // — como un scrub atado al scroll, sin temporizador propio.
+//
+// imageMobile (opcional, por fondo): cada escena puede declarar una imagen
+// alternativa para mobile, usando el mismo corte de 560px que el resto del
+// proyecto. Se resuelve solo con CSS vía custom properties + media query,
+// así que el motor cliente no necesita saber nada de esto. Si una escena
+// no define imageMobile, sigue usando image también en mobile.
 
 import '../styles/global.css';
 
 interface Background {
   id: string;
   image: string;
+  imageMobile?: string;
 }
 
 interface Props {
@@ -46,7 +53,7 @@ const { backgrounds, scrollSync = false } = Astro.props;
       class="scrolly-bg"
       class:list={[{ 'is-active': i === 0 }]}
       data-bg={bg.id}
-      style={`background-image:url('${bg.image}')`}
+      style={`--bg-image:url('${bg.image}');${bg.imageMobile ? `--bg-image-mobile:url('${bg.imageMobile}');` : ''}`}
     ></div>
   ))}
   <div class="scrolly-overlay"></div>
@@ -68,6 +75,7 @@ const { backgrounds, scrollSync = false } = Astro.props;
   .scrolly-bg {
     position: absolute;
     inset: 0;
+    background-image: var(--bg-image);
     background-size: cover;
     background-position: center;
     opacity: 0;
@@ -77,6 +85,14 @@ const { backgrounds, scrollSync = false } = Astro.props;
       opacity 1s ease-in-out,
       transform 0.9s var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
       visibility 0s;
+  }
+  /* Por debajo de 560px (mismo corte que el resto del proyecto) usamos la
+     imagen de mobile si la escena la define; si no, --bg-image-mobile no
+     existe y el fallback de var() deja la imagen de desktop tal cual. */
+  @media (max-width: 560px) {
+    .scrolly-bg {
+      background-image: var(--bg-image-mobile, var(--bg-image));
+    }
   }
   /* La capa entrante (is-active) siempre queda por encima de la
      saliente (is-leaving) para que el slide la "tape" al avanzar. */
