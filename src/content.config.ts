@@ -75,7 +75,8 @@ const backgroundsCollection = defineCollection({
   loader: file('src/content/backgrounds.json'),
   schema: z.object({
     id: z.string(),       // debe coincidir con el bgTarget usado en paws.json
-    image: z.string(),    // ruta de la imagen de fondo
+    image: z.string(),    // ruta de la imagen de fondo (desktop/default)
+    imageMobile: z.string().optional(), // ruta alternativa para mobile (<=560px); si falta, se usa `image`
   }),
 });
 
