@@ -102,10 +102,16 @@ const {
   .scrolly-inner--left {
     margin-right: auto;
     text-align: left;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
   }
   .scrolly-inner--right {
     margin-left: auto;
     text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
   }
 
   /* ---- variantes de textTransition: solo definen el estado de PARTIDA
@@ -116,12 +122,6 @@ const {
   }
   .scrolly-inner[data-text-transition='fade-down'] {
     transform: translateY(-28px);
-  }
-  .scrolly-inner[data-text-transition='slide-left'] {
-    transform: translateX(-50px);
-  }
-  .scrolly-inner[data-text-transition='slide-right'] {
-    transform: translateX(50px);
   }
   .scrolly-inner[data-text-transition='zoom-in'] {
     transform: scale(0.92);
