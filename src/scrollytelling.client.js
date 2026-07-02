@@ -19,8 +19,13 @@
 //   - .scrolly-section[data-bg-target]         (cada ScrollySection)
 //   - .scrolly-section[data-bg-transition]     (cómo entra el fondo: fade /
 //                                                slide-horizontal / slide-vertical /
-//                                                fade-visibility)
-//   - .scrolly-inner[data-text-transition]     (cómo entra el texto)
+//                                                fade-visibility / zoom-in / zoom-out)
+//   - .scrolly-section[data-content-transition] (cómo se mueve el contenido
+//                                                entre secciones con mismo fondo:
+//                                                slide-horizontal)
+//   - .scrolly-inner[data-text-transition]     (cómo entra el texto vía IO;
+//                                                no se usa en secciones con
+//                                                data-content-transition)
 //   - #threadFill                              (opcional, barra de progreso)
 // ============================================
 
@@ -38,9 +43,132 @@
     threadFill.style.width = pct + '%';
   }
 
+  /* ---------- content slide horizontal: secciones que comparten fondo y
+     quieren que su contenido entre/salga horizontalmente. El JS gestiona
+     is-active / is-leaving / data-content-enter-from en sus .scrolly-inner;
+     estos quedan fuera del IntersectionObserver. ---------- */
+  const contentSlideSections = Array.from(
+    document.querySelectorAll('.scrolly-section[data-content-transition="slide-horizontal"]')
+  );
+  const contentSlideInners = new Map();
+  contentSlideSections.forEach((sec) => {
+    const inner = sec.querySelector('.scrolly-inner');
+    if (inner) contentSlideInners.set(sec, inner);
+  });
+
+  // En scrollSync el JS fija transform en cada frame; desactivamos la
+  // transición CSS para que el movimiento siga al scroll 1:1 sin retardo.
+  if (scrollSyncMode) {
+    contentSlideInners.forEach((inner) => {
+      inner.style.transition = 'none';
+    });
+  }
+
+  let currentContentSection = null;
+
+  function cleanupContentInner(inner) {
+    inner.classList.remove('is-leaving', 'is-active');
+    inner.removeAttribute('data-content-enter-from');
+  }
+
+  function activateContentSection(incoming, outgoing, instant) {
+    const incomingInner = contentSlideInners.get(incoming);
+    const outgoingInner = outgoing ? contentSlideInners.get(outgoing) : null;
+    if (!incomingInner) return;
+
+    const enterFrom = scrollDir === 'down' ? 'right' : 'left';
+
+    if (instant) {
+      // Carga inicial: activar sin animación para que no haya "slide de entrada".
+      incomingInner.classList.add('is-active');
+      currentContentSection = incoming;
+      return;
+    }
+
+    if (outgoingInner) {
+      outgoingInner.dataset.contentEnterFrom = enterFrom;
+      outgoingInner.classList.remove('is-active');
+      outgoingInner.classList.add('is-leaving');
+      const onDone = (e) => {
+        if (e.propertyName !== 'transform') return;
+        outgoingInner.removeEventListener('transitionend', onDone);
+        if (!outgoingInner.classList.contains('is-active')) cleanupContentInner(outgoingInner);
+      };
+      outgoingInner.addEventListener('transitionend', onDone);
+    }
+
+    // Posiciona el entrante fuera de pantalla (sin transición) y en el
+    // siguiente frame lo activa para que el navegador anime el cambio.
+    incomingInner.dataset.contentEnterFrom = enterFrom;
+    incomingInner.classList.remove('is-active', 'is-leaving');
+    // eslint-disable-next-line no-unused-expressions
+    incomingInner.offsetHeight;
+    requestAnimationFrame(() => {
+      incomingInner.classList.add('is-active');
+    });
+
+    currentContentSection = incoming;
+  }
+
+  function updateContentSlide() {
+    if (contentSlideSections.length === 0) return;
+    const viewportCenter = window.innerHeight / 2;
+    let closest = null;
+    let closestDist = Infinity;
+    contentSlideSections.forEach((section) => {
+      const rect = section.getBoundingClientRect();
+      const dist = Math.abs(rect.top + rect.height / 2 - viewportCenter);
+      if (dist < closestDist) { closestDist = dist; closest = section; }
+    });
+    if (!closest || closest === currentContentSection) return;
+    activateContentSection(closest, currentContentSection, currentContentSection === null);
+  }
+
+  function updateContentSlideSynced() {
+    if (contentSlideSections.length === 0) return;
+    const centerDocY = window.scrollY + window.innerHeight / 2;
+
+    let idx = 0;
+    while (
+      idx < contentSlideSections.length - 1 &&
+      sectionDocCenter(contentSlideSections[idx + 1]) <= centerDocY
+    ) {
+      idx++;
+    }
+    const secA = contentSlideSections[idx];
+    const secB = contentSlideSections[Math.min(idx + 1, contentSlideSections.length - 1)];
+    const innerA = contentSlideInners.get(secA);
+    const innerB = contentSlideInners.get(secB);
+
+    // Oculta los inners que no forman parte del par activo.
+    contentSlideSections.forEach((sec) => {
+      if (sec !== secA && sec !== secB) {
+        const inner = contentSlideInners.get(sec);
+        if (inner) inner.style.transform = 'translateX(100%)';
+      }
+    });
+
+    if (!innerA) return;
+
+    if (secA === secB || !innerB) {
+      innerA.style.transform = 'translateX(0)';
+      return;
+    }
+
+    const centerA = sectionDocCenter(secA);
+    const centerB = sectionDocCenter(secB);
+    let progress = centerB === centerA ? 1 : (centerDocY - centerA) / (centerB - centerA);
+    progress = Math.min(1, Math.max(0, progress));
+
+    innerA.style.transform = `translateX(${progress * -100}%)`;
+    innerB.style.transform = `translateX(${(1 - progress) * 100}%)`;
+  }
+
   /* ---------- reveal scrolly-inner on scroll (respeta data-text-transition
-     vía CSS; aquí solo decidimos CUÁNDO añadir/quitar in-view) ---------- */
-  const inners = document.querySelectorAll('.scrolly-inner');
+     vía CSS; aquí solo decidimos CUÁNDO añadir/quitar in-view).
+     Los inners con data-content-transition quedan excluidos: su estado
+     lo gestiona activateContentSection / updateContentSlideSynced. ---------- */
+  const inners = document.querySelectorAll('.scrolly-inner:not([data-content-transition])');
   const revealObserver = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -297,8 +425,10 @@
         updateThread();
         if (scrollSyncMode) {
           updateBackgroundSynced();
+          updateContentSlideSynced();
         } else {
           updateBackground();
+          updateContentSlide();
         }
         ticking = false;
       });

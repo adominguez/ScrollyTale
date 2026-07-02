@@ -31,6 +31,18 @@
 //   bgZoomScale    — cuánto se nota el efecto de "zoom-in"/"zoom-out" (0..1,
 //                    como fracción de la escala normal). Sin efecto en el
 //                    resto de bgTransition.
+//   contentTransition — cómo se mueve el CONTENIDO (scrolly-inner) al
+//                    cambiar entre secciones que comparten el mismo fondo:
+//                       "slide-horizontal" — el bloque de texto sale hacia
+//                                            la izquierda/derecha (según la
+//                                            dirección del scroll) y entra
+//                                            el de la sección siguiente
+//                                            desde el lado contrario. Las
+//                                            secciones con este valor quedan
+//                                            fuera del IntersectionObserver
+//                                            (el motor JS gestiona su estado
+//                                            directamente). Compatible con
+//                                            scrollSync.
 //   textTransition — cómo aparece el bloque de TEXTO de esta sección al
 //                    entrar en el viewport:
 //                       "fade-up"    (default) — fade + sube desde abajo
@@ -46,6 +58,7 @@ interface Props {
   id?: string;
   bgTransition?: 'fade' | 'slide-horizontal' | 'slide-vertical' | 'fade-visibility' | 'zoom-in' | 'zoom-out';
   bgZoomScale?: number;
+  contentTransition?: 'slide-horizontal';
   textTransition?: 'fade-up' | 'fade-down' | 'slide-left' | 'slide-right' | 'zoom-in';
 }
 
@@ -56,6 +69,7 @@ const {
   id,
   bgTransition = 'fade',
   bgZoomScale = 0.15,
+  contentTransition,
   textTransition = 'fade-up',
 } = Astro.props;
 ---
@@ -65,12 +79,14 @@ const {
   data-bg-target={bg}
   data-bg-transition={bgTransition}
   data-bg-zoom-scale={bgZoomScale}
+  data-content-transition={contentTransition}
   id={id}
   style={`min-height:${minH}`}
 >
   <div
     class={`scrolly-inner scrolly-inner--${align}`}
-    data-text-transition={textTransition}
+    data-text-transition={contentTransition ? undefined : textTransition}
+    data-content-transition={contentTransition}
   >
     <slot />
   </div>
@@ -125,6 +141,38 @@ const {
   }
   .scrolly-inner[data-text-transition='zoom-in'] {
     transform: scale(0.92);
+  }
+
+  /* ---- contentTransition="slide-horizontal": el JS gestiona is-active /
+     is-leaving / data-content-enter-from; el IntersectionObserver NO
+     observa estos inners (quedan excluidos en el motor cliente). ---- */
+
+  /* Estado base: fuera de pantalla a la derecha hasta que el JS actúe. */
+  .scrolly-inner[data-content-transition='slide-horizontal'] {
+    opacity: 1;
+    transform: translateX(100%);
+  }
+
+  /* Posición de espera según de qué lado va a entrar. */
+  .scrolly-inner[data-content-transition='slide-horizontal']:not(.is-active)[data-content-enter-from='right'] {
+    transform: translateX(100%);
+  }
+  .scrolly-inner[data-content-transition='slide-horizontal']:not(.is-active)[data-content-enter-from='left'] {
+    transform: translateX(-100%);
+  }
+
+  /* Activo: centrado. */
+  .scrolly-inner[data-content-transition='slide-horizontal'].is-active {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  /* Salida: se va hacia el lado opuesto al de entrada del relevo. */
+  .scrolly-inner[data-content-transition='slide-horizontal'].is-leaving[data-content-enter-from='right'] {
+    transform: translateX(-100%);
+  }
+  .scrolly-inner[data-content-transition='slide-horizontal'].is-leaving[data-content-enter-from='left'] {
+    transform: translateX(100%);
   }
 
   @media (max-width: 900px) {

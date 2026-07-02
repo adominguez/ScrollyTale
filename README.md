@@ -53,7 +53,8 @@ const backgrounds = [
 | `id`             | `string` | — | id HTML opcional, para anclas. |
 | `bgTransition`   | `'fade' \| 'slide-horizontal' \| 'slide-vertical' \| 'fade-visibility' \| 'zoom-in' \| 'zoom-out'` | `'fade'` | Cómo entra el fondo al activarse esta sección. |
 | `bgZoomScale`    | `number` | `0.15` | Intensidad del efecto en `zoom-in`/`zoom-out` (fracción de escala respecto a 1). Sin efecto en el resto de `bgTransition`. |
-| `textTransition` | `'fade-up' \| 'fade-down' \| 'slide-left' \| 'slide-right' \| 'zoom-in'` | `'fade-up'` | Cómo aparece el texto al entrar en el viewport. |
+| `contentTransition` | `'slide-horizontal'` | — | Slide horizontal del bloque de contenido al pasar entre secciones (incluso si comparten el mismo fondo). Compatible con `scrollSync`. Cuando se activa, `textTransition` se ignora (el motor JS gestiona el estado del inner directamente). |
+| `textTransition` | `'fade-up' \| 'fade-down' \| 'slide-left' \| 'slide-right' \| 'zoom-in'` | `'fade-up'` | Cómo aparece el texto al entrar en el viewport. Sin efecto si `contentTransition` está activo. |
 
 ## CSS personalizable
 
