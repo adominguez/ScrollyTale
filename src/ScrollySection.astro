@@ -139,40 +139,69 @@ const {
   .scrolly-inner[data-text-transition='fade-down'] {
     transform: translateY(-28px);
   }
+  .scrolly-inner[data-text-transition='slide-left'] {
+    transform: translateX(-50px);
+  }
+  .scrolly-inner[data-text-transition='slide-right'] {
+    transform: translateX(50px);
+  }
   .scrolly-inner[data-text-transition='zoom-in'] {
     transform: scale(0.92);
   }
 
-  /* ---- contentTransition="slide-horizontal": el JS gestiona is-active /
-     is-leaving / data-content-enter-from; el IntersectionObserver NO
-     observa estos inners (quedan excluidos en el motor cliente). ---- */
+  /* ---- contentTransition="slide-horizontal" ----
+     El inner se saca del flujo del documento (position:fixed) y se ancla
+     al viewport igual que el fondo. Así no scrollea verticalmente y el
+     slide horizontal cubre la pantalla entera sin overflow ni z-index
+     externos. La <section> queda como spacer invisible para que el JS
+     detecte qué sección está centrada en el viewport. ---- */
 
-  /* Estado base: fuera de pantalla a la derecha hasta que el JS actúe. */
   .scrolly-inner[data-content-transition='slide-horizontal'] {
+    position: fixed;
+    top: 50%;
+    z-index: 20;
     opacity: 1;
-    transform: translateX(100%);
+    /* default: fuera de pantalla a la derecha + centrado verticalmente */
+    transform: translate(100vw, -50%);
   }
 
-  /* Posición de espera según de qué lado va a entrar. */
+  /* Ajuste horizontal según alineación (left/right usan posición absoluta;
+     center usa left:0 right:0 + margin:auto que ya viene de --center). */
+  .scrolly-inner--center[data-content-transition='slide-horizontal'] {
+    left: 0;
+    right: 0;
+    padding: 0 clamp(20px, 6vw, 70px);
+    box-sizing: border-box;
+  }
+  .scrolly-inner--left[data-content-transition='slide-horizontal'] {
+    left: clamp(20px, 6vw, 70px);
+    right: auto;
+  }
+  .scrolly-inner--right[data-content-transition='slide-horizontal'] {
+    right: clamp(20px, 6vw, 70px);
+    left: auto;
+  }
+
+  /* Espera fuera de pantalla según de qué lado entrará. */
   .scrolly-inner[data-content-transition='slide-horizontal']:not(.is-active)[data-content-enter-from='right'] {
-    transform: translateX(100%);
+    transform: translate(100vw, -50%);
   }
   .scrolly-inner[data-content-transition='slide-horizontal']:not(.is-active)[data-content-enter-from='left'] {
-    transform: translateX(-100%);
+    transform: translate(-100vw, -50%);
   }
 
-  /* Activo: centrado. */
+  /* Activo: en su posición natural, centrado verticalmente. */
   .scrolly-inner[data-content-transition='slide-horizontal'].is-active {
-    transform: translateX(0);
+    transform: translate(0, -50%);
     opacity: 1;
   }
 
-  /* Salida: se va hacia el lado opuesto al de entrada del relevo. */
+  /* Salida: lado opuesto al del entrante. */
   .scrolly-inner[data-content-transition='slide-horizontal'].is-leaving[data-content-enter-from='right'] {
-    transform: translateX(-100%);
+    transform: translate(-100vw, -50%);
   }
   .scrolly-inner[data-content-transition='slide-horizontal'].is-leaving[data-content-enter-from='left'] {
-    transform: translateX(100%);
+    transform: translate(100vw, -50%);
   }
 
   @media (max-width: 900px) {
@@ -181,6 +210,14 @@ const {
       margin-left: auto;
       margin-right: auto;
       text-align: center;
+    }
+    /* Los inners fixed left/right también se centran en móvil. */
+    .scrolly-inner--left[data-content-transition='slide-horizontal'],
+    .scrolly-inner--right[data-content-transition='slide-horizontal'] {
+      left: 0;
+      right: 0;
+      padding: 0 clamp(20px, 6vw, 70px);
+      box-sizing: border-box;
     }
   }
   @media (max-width: 560px) {

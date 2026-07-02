@@ -79,8 +79,15 @@
     const enterFrom = scrollDir === 'down' ? 'right' : 'left';
 
     if (instant) {
-      // Carga inicial: activar sin animación para que no haya "slide de entrada".
+      // Carga inicial: añadir is-active sin animación. Desactivamos la
+      // transition, forzamos reflow para que el navegador confirme el
+      // nuevo estado, y restauramos la transition en el siguiente frame
+      // (así el browser ya no intenta interpolar desde el estado anterior).
+      incomingInner.style.transition = 'none';
       incomingInner.classList.add('is-active');
+      // eslint-disable-next-line no-unused-expressions
+      incomingInner.offsetHeight;
+      requestAnimationFrame(() => { incomingInner.style.transition = ''; });
       currentContentSection = incoming;
       return;
     }
@@ -141,17 +148,18 @@
     const innerB = contentSlideInners.get(secB);
 
     // Oculta los inners que no forman parte del par activo.
+    // El translateY(-50%) es el centrado vertical del position:fixed.
     contentSlideSections.forEach((sec) => {
       if (sec !== secA && sec !== secB) {
         const inner = contentSlideInners.get(sec);
-        if (inner) inner.style.transform = 'translateX(100%)';
+        if (inner) inner.style.transform = 'translate(100vw, -50%)';
       }
     });
 
     if (!innerA) return;
 
     if (secA === secB || !innerB) {
-      innerA.style.transform = 'translateX(0)';
+      innerA.style.transform = 'translate(0, -50%)';
       return;
     }
 
@@ -160,8 +168,10 @@
     let progress = centerB === centerA ? 1 : (centerDocY - centerA) / (centerB - centerA);
     progress = Math.min(1, Math.max(0, progress));
 
-    innerA.style.transform = `translateX(${progress * -100}%)`;
-    innerB.style.transform = `translateX(${(1 - progress) * 100}%)`;
+    // translate(X, -50%): X mueve horizontalmente, -50% centra verticalmente
+    // el inner position:fixed sobre el viewport.
+    innerA.style.transform = `translate(${progress * -100}vw, -50%)`;
+    innerB.style.transform = `translate(${(1 - progress) * 100}vw, -50%)`;
   }
 
   /* ---------- reveal scrolly-inner on scroll (respeta data-text-transition
