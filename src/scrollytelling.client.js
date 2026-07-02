@@ -65,10 +65,36 @@
   }
 
   let currentContentSection = null;
+  // true solo hasta la primera activación (para no animar el estado inicial
+  // si la página se carga con una sección slide ya centrada en el viewport).
+  let contentFirstActivation = true;
 
   function cleanupContentInner(inner) {
     inner.classList.remove('is-leaving', 'is-active');
     inner.removeAttribute('data-content-enter-from');
+  }
+
+  // Oculta inmediatamente el inner activo (sin animación) cuando ninguna
+  // sección slide está en el viewport.
+  function hideCurrentContentInner() {
+    if (currentContentSection === null) return;
+    const inner = contentSlideInners.get(currentContentSection);
+    if (inner) {
+      inner.style.transition = 'none';
+      cleanupContentInner(inner);
+      // eslint-disable-next-line no-unused-expressions
+      inner.offsetHeight;
+      requestAnimationFrame(() => { inner.style.transition = ''; });
+    }
+    currentContentSection = null;
+  }
+
+  // Devuelve true si el CENTRO de la sección está dentro del viewport.
+  // Se usa para decidir si el inner de esa sección debe ser visible.
+  function sectionCenterInViewport(section) {
+    const rect = section.getBoundingClientRect();
+    const center = rect.top + rect.height / 2;
+    return center >= 0 && center <= window.innerHeight;
   }
 
   function activateContentSection(incoming, outgoing, instant) {
@@ -79,16 +105,15 @@
     const enterFrom = scrollDir === 'down' ? 'right' : 'left';
 
     if (instant) {
-      // Carga inicial: añadir is-active sin animación. Desactivamos la
-      // transition, forzamos reflow para que el navegador confirme el
-      // nuevo estado, y restauramos la transition en el siguiente frame
-      // (así el browser ya no intenta interpolar desde el estado anterior).
+      // Primera activación: sin animación para no mostrar un slide
+      // innecesario al cargar la página o al llegar por primera vez.
       incomingInner.style.transition = 'none';
       incomingInner.classList.add('is-active');
       // eslint-disable-next-line no-unused-expressions
       incomingInner.offsetHeight;
       requestAnimationFrame(() => { incomingInner.style.transition = ''; });
       currentContentSection = incoming;
+      contentFirstActivation = false;
       return;
     }
 
@@ -104,8 +129,6 @@
       outgoingInner.addEventListener('transitionend', onDone);
     }
 
-    // Posiciona el entrante fuera de pantalla (sin transición) y en el
-    // siguiente frame lo activa para que el navegador anime el cambio.
     incomingInner.dataset.contentEnterFrom = enterFrom;
     incomingInner.classList.remove('is-active', 'is-leaving');
     // eslint-disable-next-line no-unused-expressions
@@ -115,6 +138,7 @@
     });
 
     currentContentSection = incoming;
+    contentFirstActivation = false;
   }
 
   function updateContentSlide() {
@@ -127,8 +151,20 @@
       const dist = Math.abs(rect.top + rect.height / 2 - viewportCenter);
       if (dist < closestDist) { closestDist = dist; closest = section; }
     });
-    if (!closest || closest === currentContentSection) return;
-    activateContentSection(closest, currentContentSection, currentContentSection === null);
+
+    // Solo activar si el centro de la sección más cercana está dentro del
+    // viewport. Si está fuera (usuario antes o después del bloque slide),
+    // ocultar el inner actual sin animación.
+    if (!closest || !sectionCenterInViewport(closest)) {
+      hideCurrentContentInner();
+      return;
+    }
+
+    if (closest !== currentContentSection) {
+      // instant=true solo en la primera activación global (no en re-entradas
+      // desde fuera del bloque), para evitar el slide de aparición inicial.
+      activateContentSection(closest, currentContentSection, contentFirstActivation);
+    }
   }
 
   function updateContentSlideSynced() {
@@ -147,8 +183,18 @@
     const innerA = contentSlideInners.get(secA);
     const innerB = contentSlideInners.get(secB);
 
+    // Solo mostrar inners cuando al menos el centro de una de las dos
+    // secciones del par esté dentro del viewport. Si ambas están fuera
+    // (el usuario está antes o después del bloque slide), ocultar todo.
+    if (!sectionCenterInViewport(secA) && !sectionCenterInViewport(secB)) {
+      contentSlideSections.forEach((sec) => {
+        const inner = contentSlideInners.get(sec);
+        if (inner) inner.style.transform = 'translate(100vw, -50%)';
+      });
+      return;
+    }
+
     // Oculta los inners que no forman parte del par activo.
-    // El translateY(-50%) es el centrado vertical del position:fixed.
     contentSlideSections.forEach((sec) => {
       if (sec !== secA && sec !== secB) {
         const inner = contentSlideInners.get(sec);
@@ -168,8 +214,6 @@
     let progress = centerB === centerA ? 1 : (centerDocY - centerA) / (centerB - centerA);
     progress = Math.min(1, Math.max(0, progress));
 
-    // translate(X, -50%): X mueve horizontalmente, -50% centra verticalmente
-    // el inner position:fixed sobre el viewport.
     innerA.style.transform = `translate(${progress * -100}vw, -50%)`;
     innerB.style.transform = `translate(${(1 - progress) * 100}vw, -50%)`;
   }
