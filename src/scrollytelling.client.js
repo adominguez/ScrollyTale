@@ -29,7 +29,19 @@
 //   - #threadFill                              (opcional, barra de progreso)
 // ============================================
 
-(function () {
+// Con View Transitions (astro:transitions) el DOM se sustituye entre
+// páginas pero los <script> ya cargados no se re-ejecutan solos: si nos
+// limitáramos a correr esto una vez al cargar el módulo, al volver a esta
+// página los listeners/observers quedarían enganchados a elementos del DOM
+// anterior (desconectados) en vez de a los nuevos. Por eso todo el motor
+// vive dentro de init() y se vuelve a lanzar en cada 'astro:page-load'
+// (evento que Astro dispara tanto en la carga inicial como tras cada
+// transición), limpiando antes lo que se registró la vez anterior.
+let cleanupPrev = null;
+
+function initScrollytelling() {
+  if (cleanupPrev) cleanupPrev();
+
   const stage = document.getElementById('scrollyStage');
   const scrollSyncMode = !!(stage && stage.dataset.scrollSync === 'true');
 
@@ -491,4 +503,12 @@
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll);
   onScroll();
-})();
+
+  cleanupPrev = function cleanup() {
+    window.removeEventListener('scroll', onScroll);
+    window.removeEventListener('resize', onScroll);
+    revealObserver.disconnect();
+  };
+}
+
+document.addEventListener('astro:page-load', initScrollytelling);
