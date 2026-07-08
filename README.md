@@ -69,8 +69,9 @@ import ScrollyPinned from 'scrollytale/ScrollyPinned.astro';
 | `bg`    | `string` | — | id del fondo cuyas secciones activan este elemento. Debe coincidir con el `bg` de las `ScrollySection` asociadas. |
 | `align` | `'left' \| 'right' \| 'center'` | `'center'` | Alineación horizontal. |
 | `top`      | `string` | `'20%'` | Posición vertical en el viewport (cualquier valor CSS, ej. `'15vh'`). |
-| `maxWidth` | `string` | — | Ancho máximo del elemento (cualquier valor CSS, ej. `'800px'`, `'60ch'`). Si no se indica, usa el valor por defecto del alineador (`680px` para `center`, `560px` para `left`/`right`). |
-| `id`       | `string` | — | id HTML opcional. |
+| `maxWidth`   | `string` | — | Ancho máximo del elemento (cualquier valor CSS, ej. `'800px'`, `'60ch'`). Si no se indica, usa el valor por defecto del alineador (`680px` para `center`, `560px` para `left`/`right`). |
+| `threshold`  | `number` | `0` | Fracción del viewport (0–1) que se recorta por arriba y por abajo para calcular la zona de visibilidad. Con `0` el elemento aparece en cuanto el centro de la sección roza el borde del viewport; con `0.25` solo aparece cuando ese centro está entre el 25 % y el 75 % de la altura de pantalla. |
+| `id`         | `string` | — | id HTML opcional. |
 
 **Ejemplo:**
 

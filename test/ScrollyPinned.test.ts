@@ -67,4 +67,14 @@ describe('ScrollyPinned.astro', () => {
     const html = await render({ bg: 'hero' });
     expect(html).not.toContain('max-width');
   });
+
+  it('propaga threshold como data-threshold (default 0)', async () => {
+    const html = await render({ bg: 'hero' });
+    expect(html).toContain('data-threshold="0"');
+  });
+
+  it('propaga un threshold personalizado a data-threshold', async () => {
+    const html = await render({ bg: 'hero', threshold: 0.25 });
+    expect(html).toContain('data-threshold="0.25"');
+  });
 });

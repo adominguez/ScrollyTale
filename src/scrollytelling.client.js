@@ -493,9 +493,15 @@ function initScrollytelling() {
     if (pinnedElements.length === 0) return;
     pinnedElements.forEach((pinned) => {
       const targetBg = pinned.dataset.pinnedFor;
-      const active = sections.some(
-        (s) => s.dataset.bgTarget === targetBg && sectionCenterInViewport(s)
-      );
+      const t = parseFloat(pinned.dataset.threshold || '0');
+      const lo = window.innerHeight * t;
+      const hi = window.innerHeight * (1 - t);
+      const active = sections.some((s) => {
+        if (s.dataset.bgTarget !== targetBg) return false;
+        const rect = s.getBoundingClientRect();
+        const center = rect.top + rect.height / 2;
+        return center >= lo && center <= hi;
+      });
       pinned.classList.toggle('is-visible', active);
     });
   }

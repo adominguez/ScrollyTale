@@ -563,6 +563,34 @@ describe('scrollytelling.client.js — updatePinned', () => {
     expect(document.getElementById('pinned').classList.contains('is-visible')).toBe(false);
   });
 
+  it('con threshold=0.25 no muestra is-visible cuando el centro está fuera de la zona [25%,75%] del viewport', async () => {
+    document.body.innerHTML = `
+      <div class="scrolly-pinned" data-pinned-for="hero" data-threshold="0.25" id="pinned"></div>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade"></section>
+    `;
+    // innerHeight=800 → zona válida: [200, 600]
+    // centro en top=650, height=100 → center=700, fuera de zona
+    mockRect(document.querySelector('.scrolly-section'), 650, 100);
+
+    await initEngine();
+
+    expect(document.getElementById('pinned').classList.contains('is-visible')).toBe(false);
+  });
+
+  it('con threshold=0.25 muestra is-visible cuando el centro está dentro de la zona [25%,75%] del viewport', async () => {
+    document.body.innerHTML = `
+      <div class="scrolly-pinned" data-pinned-for="hero" data-threshold="0.25" id="pinned"></div>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade"></section>
+    `;
+    // innerHeight=800 → zona válida: [200, 600]
+    // centro en top=350, height=100 → center=400, dentro de zona
+    mockRect(document.querySelector('.scrolly-section'), 350, 100);
+
+    await initEngine();
+
+    expect(document.getElementById('pinned').classList.contains('is-visible')).toBe(true);
+  });
+
   it('con varias secciones del mismo bg, is-visible persiste mientras al menos una esté en el viewport', async () => {
     document.body.innerHTML = `
       <div class="scrolly-pinned" data-pinned-for="taller" id="pinned"></div>

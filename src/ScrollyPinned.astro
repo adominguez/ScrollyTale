@@ -20,6 +20,7 @@ interface Props {
   align?: 'left' | 'right' | 'center';
   top?: string;
   maxWidth?: string;
+  threshold?: number;
   id?: string;
 }
 
@@ -28,6 +29,7 @@ const {
   align = 'center',
   top = '20%',
   maxWidth,
+  threshold = 0,
   id,
 } = Astro.props;
 ---
@@ -35,6 +37,7 @@ const {
 <div
   class={`scrolly-pinned scrolly-pinned--${align}`}
   data-pinned-for={bg}
+  data-threshold={threshold}
   id={id}
   style={`top: ${top}${maxWidth ? `; max-width: ${maxWidth}` : ''}`}
 >
