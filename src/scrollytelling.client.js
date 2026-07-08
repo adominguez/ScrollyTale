@@ -496,13 +496,30 @@ function initScrollytelling() {
       const t = parseFloat(pinned.dataset.threshold || '0');
       const lo = window.innerHeight * t;
       const hi = window.innerHeight * (1 - t);
-      const active = sections.some((s) => {
-        if (s.dataset.bgTarget !== targetBg) return false;
+
+      const targetSections = sections.filter((s) => s.dataset.bgTarget === targetBg);
+
+      const inZone = targetSections.some((s) => {
         const rect = s.getBoundingClientRect();
         const center = rect.top + rect.height / 2;
         return center >= lo && center <= hi;
       });
-      pinned.classList.toggle('is-visible', active);
+
+      // Cuando hay varias secciones del mismo bg, el threshold crea un hueco
+      // entre ellas en el que ningún centro está en [lo, hi]. Si la sección
+      // anterior ya salió por arriba y la siguiente aún no entró por abajo,
+      // el usuario está justo entre ambas: el pinned debe seguir visible.
+      const inBetween = !inZone && targetSections.some((s, i) => {
+        const next = targetSections[i + 1];
+        if (!next) return false;
+        const rA = s.getBoundingClientRect();
+        const rB = next.getBoundingClientRect();
+        const centerA = rA.top + rA.height / 2;
+        const centerB = rB.top + rB.height / 2;
+        return centerA < lo && centerB > hi;
+      });
+
+      pinned.classList.toggle('is-visible', inZone || inBetween);
     });
   }
 

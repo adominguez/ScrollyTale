@@ -591,6 +591,25 @@ describe('scrollytelling.client.js — updatePinned', () => {
     expect(document.getElementById('pinned').classList.contains('is-visible')).toBe(true);
   });
 
+  it('con threshold, mantiene is-visible al scrollear entre dos secciones del mismo bg sin parpadear', async () => {
+    document.body.innerHTML = `
+      <div class="scrolly-pinned" data-pinned-for="hero" data-threshold="0.25" id="pinned"></div>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade"></section>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade"></section>
+    `;
+    const sections = document.querySelectorAll('.scrolly-section');
+    // innerHeight=800, threshold=0.25 → lo=200, hi=600
+    // Sección A centro=100: ya salió por arriba del umbral (< lo)
+    // Sección B centro=700: aún no ha entrado por abajo (> hi)
+    // Ninguna está en zona pero el usuario está entre ellas → debe seguir visible
+    mockRect(sections[0], 50, 100);
+    mockRect(sections[1], 650, 100);
+
+    await initEngine();
+
+    expect(document.getElementById('pinned').classList.contains('is-visible')).toBe(true);
+  });
+
   it('con varias secciones del mismo bg, is-visible persiste mientras al menos una esté en el viewport', async () => {
     document.body.innerHTML = `
       <div class="scrolly-pinned" data-pinned-for="taller" id="pinned"></div>
