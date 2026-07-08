@@ -56,6 +56,41 @@ const backgrounds = [
 | `contentTransition` | `'slide-horizontal'` | — | Slide horizontal del bloque de contenido al pasar entre secciones (incluso si comparten el mismo fondo). Compatible con `scrollSync`. Cuando se activa, `textTransition` se ignora (el motor JS gestiona el estado del inner directamente). |
 | `textTransition` | `'fade-up' \| 'fade-down' \| 'slide-left' \| 'slide-right' \| 'zoom-in'` | `'fade-up'` | Cómo aparece el texto al entrar en el viewport. Sin efecto si `contentTransition` está activo. |
 
+### `ScrollyPinned`
+
+Contenido fijo anclado al viewport que aparece cuando alguna sección con el `bg` indicado está centrada en pantalla. Ideal para encabezados compartidos (`h2`, eyebrow…) que deben mantenerse visibles mientras el usuario scrollea por varias secciones con el mismo fondo.
+
+```astro
+import ScrollyPinned from 'scrollytale/ScrollyPinned.astro';
+```
+
+| Prop    | Tipo | Default | Descripción |
+| ------- | ---- | ------- | ----------- |
+| `bg`    | `string` | — | id del fondo cuyas secciones activan este elemento. Debe coincidir con el `bg` de las `ScrollySection` asociadas. |
+| `align` | `'left' \| 'right' \| 'center'` | `'center'` | Alineación horizontal. |
+| `top`   | `string` | `'20%'` | Posición vertical en el viewport (cualquier valor CSS, ej. `'15vh'`). |
+| `id`    | `string` | — | id HTML opcional. |
+
+**Ejemplo:**
+
+```astro
+<ScrollyStage backgrounds={backgrounds}>
+  <ScrollyPinned bg="taller" align="center" top="20%">
+    <h2>Título compartido para todas las secciones de "taller"</h2>
+  </ScrollyPinned>
+
+  <ScrollySection bg="taller" contentTransition="slide-horizontal">
+    <h3>Slide 1</h3>
+    <p>Contenido que desliza horizontalmente.</p>
+  </ScrollySection>
+
+  <ScrollySection bg="taller" contentTransition="slide-horizontal">
+    <h3>Slide 2</h3>
+    <p>El h2 de arriba se mantiene fijo.</p>
+  </ScrollySection>
+</ScrollyStage>
+```
+
 ## CSS personalizable
 
 El motor usa la custom property `--ease` para las transiciones (fallback:

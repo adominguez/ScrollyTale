@@ -23,6 +23,11 @@
 //   - .scrolly-section[data-content-transition] (cómo se mueve el contenido
 //                                                entre secciones con mismo fondo:
 //                                                slide-horizontal)
+//   - .scrolly-pinned[data-pinned-for]         (contenido fijo anclado al
+//                                                viewport; visible cuando al
+//                                                menos una sección con ese
+//                                                bg está centrada en el
+//                                                viewport — ScrollyPinned)
 //   - .scrolly-inner[data-text-transition]     (cómo entra el texto vía IO;
 //                                                no se usa en secciones con
 //                                                data-content-transition)
@@ -249,6 +254,12 @@ function initScrollytelling() {
      viewport center, then animate the matching bg layer in using the
      transition type declared on that section ---------- */
   const sections = Array.from(document.querySelectorAll('.scrolly-section[data-bg-target]'));
+
+  /* ---------- pinned content (ScrollyPinned) ---------- */
+  const pinnedElements = Array.from(
+    document.querySelectorAll('.scrolly-pinned[data-pinned-for]')
+  );
+
   const bgLayers = {};
   document.querySelectorAll('.scrolly-bg').forEach((el) => {
     bgLayers[el.dataset.bg] = el;
@@ -478,6 +489,17 @@ function initScrollytelling() {
     applySyncedTransition(layerA, layerB, transitionType, progress, zoomScale);
   }
 
+  function updatePinned() {
+    if (pinnedElements.length === 0) return;
+    pinnedElements.forEach((pinned) => {
+      const targetBg = pinned.dataset.pinnedFor;
+      const active = sections.some(
+        (s) => s.dataset.bgTarget === targetBg && sectionCenterInViewport(s)
+      );
+      pinned.classList.toggle('is-visible', active);
+    });
+  }
+
   /* ---------- rAF scroll loop ---------- */
   let ticking = false;
   function onScroll() {
@@ -496,6 +518,7 @@ function initScrollytelling() {
           updateBackground();
           updateContentSlide();
         }
+        updatePinned();
         ticking = false;
       });
     }

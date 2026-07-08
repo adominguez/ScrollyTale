@@ -1,0 +1,91 @@
+---
+// ScrollyPinned.astro
+// Contenido fijo anclado al viewport que aparece/desaparece en función de
+// si alguna sección con el bg indicado está centrada en el viewport.
+// Pensado para encabezados compartidos (h2, eyebrow, etc.) que deben
+// mantenerse visibles mientras el usuario scrollea por varias
+// ScrollySection con el mismo fondo.
+//
+// Props:
+//   bg    — id del fondo cuyas secciones activan este elemento (debe
+//            coincidir con el bg de las <ScrollySection> asociadas)
+//   align — "left" | "right" | "center" — alineación horizontal
+//   top   — posición vertical en el viewport (cualquier valor CSS,
+//            ej. "20%", "15vh"). Default "20%" para quedar por encima
+//            del contenido central de las secciones (que está al 50%).
+//   id    — id HTML opcional
+
+interface Props {
+  bg: string;
+  align?: 'left' | 'right' | 'center';
+  top?: string;
+  id?: string;
+}
+
+const {
+  bg,
+  align = 'center',
+  top = '20%',
+  id,
+} = Astro.props;
+---
+
+<div
+  class={`scrolly-pinned scrolly-pinned--${align}`}
+  data-pinned-for={bg}
+  id={id}
+  style={`top: ${top}`}
+>
+  <slot />
+</div>
+
+<style>
+  .scrolly-pinned {
+    position: fixed;
+    z-index: 20;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1));
+  }
+
+  .scrolly-pinned.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Centro: usa left:0 right:0 + margin:auto para centrar un fixed element. */
+  .scrolly-pinned--center {
+    left: 0;
+    right: 0;
+    max-width: 680px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 0 clamp(20px, 6vw, 70px);
+    box-sizing: border-box;
+  }
+
+  .scrolly-pinned--left {
+    left: clamp(20px, 6vw, 70px);
+    max-width: 560px;
+    text-align: left;
+  }
+
+  .scrolly-pinned--right {
+    right: clamp(20px, 6vw, 70px);
+    max-width: 560px;
+    text-align: right;
+  }
+
+  @media (max-width: 900px) {
+    .scrolly-pinned--left,
+    .scrolly-pinned--right {
+      left: 0;
+      right: 0;
+      max-width: 680px;
+      margin: 0 auto;
+      text-align: center;
+      padding: 0 clamp(20px, 6vw, 70px);
+      box-sizing: border-box;
+    }
+  }
+</style>
