@@ -6,6 +6,7 @@
   "exports": {
     "./ScrollyStage.astro": "./src/ScrollyStage.astro",
     "./ScrollySection.astro": "./src/ScrollySection.astro",
+    "./ScrollyPinned.astro": "./src/ScrollyPinned.astro",
     "./scrollytelling.client.js": "./src/scrollytelling.client.js"
   },
   "files": [
