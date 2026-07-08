@@ -19,6 +19,7 @@ interface Props {
   bg: string;
   align?: 'left' | 'right' | 'center';
   top?: string;
+  maxWidth?: string;
   id?: string;
 }
 
@@ -26,6 +27,7 @@ const {
   bg,
   align = 'center',
   top = '20%',
+  maxWidth,
   id,
 } = Astro.props;
 ---
@@ -34,7 +36,7 @@ const {
   class={`scrolly-pinned scrolly-pinned--${align}`}
   data-pinned-for={bg}
   id={id}
-  style={`top: ${top}`}
+  style={`top: ${top}${maxWidth ? `; max-width: ${maxWidth}` : ''}`}
 >
   <slot />
 </div>

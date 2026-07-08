@@ -68,8 +68,9 @@ import ScrollyPinned from 'scrollytale/ScrollyPinned.astro';
 | ------- | ---- | ------- | ----------- |
 | `bg`    | `string` | — | id del fondo cuyas secciones activan este elemento. Debe coincidir con el `bg` de las `ScrollySection` asociadas. |
 | `align` | `'left' \| 'right' \| 'center'` | `'center'` | Alineación horizontal. |
-| `top`   | `string` | `'20%'` | Posición vertical en el viewport (cualquier valor CSS, ej. `'15vh'`). |
-| `id`    | `string` | — | id HTML opcional. |
+| `top`      | `string` | `'20%'` | Posición vertical en el viewport (cualquier valor CSS, ej. `'15vh'`). |
+| `maxWidth` | `string` | — | Ancho máximo del elemento (cualquier valor CSS, ej. `'800px'`, `'60ch'`). Si no se indica, usa el valor por defecto del alineador (`680px` para `center`, `560px` para `left`/`right`). |
+| `id`       | `string` | — | id HTML opcional. |
 
 **Ejemplo:**
 

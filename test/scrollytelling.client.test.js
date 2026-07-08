@@ -504,6 +504,81 @@ describe('scrollytelling.client.js — barra de progreso: casos adicionales', ()
   });
 });
 
+describe('scrollytelling.client.js — updatePinned', () => {
+  it('añade is-visible al elemento pinned cuando la sección coincidente está centrada en el viewport', async () => {
+    document.body.innerHTML = `
+      <div class="scrolly-pinned" data-pinned-for="hero" id="pinned"></div>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade"></section>
+    `;
+    mockRect(document.querySelector('.scrolly-section'), 0, 100);
+
+    await initEngine();
+
+    expect(document.getElementById('pinned').classList.contains('is-visible')).toBe(true);
+  });
+
+  it('no añade is-visible cuando ninguna sección coincidente tiene su centro en el viewport', async () => {
+    document.body.innerHTML = `
+      <div class="scrolly-pinned" data-pinned-for="hero" id="pinned"></div>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade"></section>
+    `;
+    mockRect(document.querySelector('.scrolly-section'), 5000, 100);
+
+    await initEngine();
+
+    expect(document.getElementById('pinned').classList.contains('is-visible')).toBe(false);
+  });
+
+  it('gestiona múltiples elementos pinned de forma independiente', async () => {
+    document.body.innerHTML = `
+      <div class="scrolly-pinned" data-pinned-for="hero" id="pinnedHero"></div>
+      <div class="scrolly-pinned" data-pinned-for="forest" id="pinnedForest"></div>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade"></section>
+      <section class="scrolly-section" data-bg-target="forest" data-bg-transition="fade"></section>
+    `;
+    const sections = document.querySelectorAll('.scrolly-section');
+    mockRect(sections[0], 0, 100);
+    mockRect(sections[1], 5000, 100);
+
+    await initEngine();
+
+    expect(document.getElementById('pinnedHero').classList.contains('is-visible')).toBe(true);
+    expect(document.getElementById('pinnedForest').classList.contains('is-visible')).toBe(false);
+  });
+
+  it('pierde is-visible cuando la sección sale del viewport al scrollear', async () => {
+    document.body.innerHTML = `
+      <div class="scrolly-pinned" data-pinned-for="hero" id="pinned"></div>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade"></section>
+    `;
+    mockRect(document.querySelector('.scrolly-section'), 0, 100);
+
+    await initEngine();
+    expect(document.getElementById('pinned').classList.contains('is-visible')).toBe(true);
+
+    mockRect(document.querySelector('.scrolly-section'), 5000, 100);
+    setScrollY(1000);
+    window.dispatchEvent(new Event('scroll'));
+
+    expect(document.getElementById('pinned').classList.contains('is-visible')).toBe(false);
+  });
+
+  it('con varias secciones del mismo bg, is-visible persiste mientras al menos una esté en el viewport', async () => {
+    document.body.innerHTML = `
+      <div class="scrolly-pinned" data-pinned-for="taller" id="pinned"></div>
+      <section class="scrolly-section" data-bg-target="taller" data-bg-transition="fade"></section>
+      <section class="scrolly-section" data-bg-target="taller" data-bg-transition="fade"></section>
+    `;
+    const sections = document.querySelectorAll('.scrolly-section');
+    mockRect(sections[0], 5000, 100);
+    mockRect(sections[1], 0, 100);
+
+    await initEngine();
+
+    expect(document.getElementById('pinned').classList.contains('is-visible')).toBe(true);
+  });
+});
+
 describe('scrollytelling.client.js — reinicio en astro:page-load', () => {
   it('limpia el observer y los listeners anteriores al reinicializarse', async () => {
     document.body.innerHTML = `<div class="scrolly-inner"></div>`;
