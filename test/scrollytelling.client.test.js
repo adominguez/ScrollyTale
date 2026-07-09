@@ -625,25 +625,36 @@ describe('scrollytelling.client.js — scrollSync: casos adicionales', () => {
     expect(document.getElementById('innerB').style.transform).toBe('translate(100vw, -50%)');
   });
 
-  it('en modo scrollSync, oculta el inner mientras el centro de la sección no cruza el threshold', async () => {
+  it('en modo scrollSync, respeta el umbral de entrada y el umbral de salida', async () => {
+    // threshold=0.25 → hi=600 (entrada), lo=200 (salida)
     document.body.innerHTML = `
       <div id="scrollyStage" data-scroll-sync="true"></div>
-      <section class="scrolly-section" data-content-transition="slide-horizontal" data-content-threshold="0.5">
+      <section class="scrolly-section" data-content-transition="slide-horizontal" data-content-threshold="0.25">
         <div class="scrolly-inner" data-content-transition="slide-horizontal" id="innerA"></div>
       </section>
     `;
     const section = document.querySelector('.scrolly-section');
 
-    // Centro en 600: por encima de hi=400 → inner oculto (threshold no cruzado)
-    mockRect(section, 550, 100);
+    // Centro=650 (> hi=600): umbral de entrada no cruzado → oculto a la derecha
+    mockRect(section, 600, 100);
     await initEngine();
-    expect(document.getElementById('innerA').style.transform).toBe('translate(100vw, -50%)');
+    const inner = document.getElementById('innerA');
+    expect(inner.style.transform).toBe('translate(100vw, -50%)');
+    expect(inner.style.opacity).toBe('0');
 
-    // Centro en 300: por debajo de hi=400 → inner visible (threshold cruzado)
-    mockRect(section, 250, 100);
-    setScrollY(300);
+    // Centro=400 ([200,600]): zona visible → visible con fade
+    mockRect(section, 350, 100);
+    setScrollY(200);
     window.dispatchEvent(new Event('scroll'));
-    expect(document.getElementById('innerA').style.transform).toBe('translate(0, -50%)');
+    expect(inner.style.transform).toBe('translate(0, -50%)');
+    expect(inner.style.opacity).toBe('');
+
+    // Centro=100 (< lo=200): umbral de salida superado → fade out temprano
+    mockRect(section, 50, 100);
+    setScrollY(1400);
+    window.dispatchEvent(new Event('scroll'));
+    expect(inner.style.transform).toBe('translate(0, -50%)');
+    expect(inner.style.opacity).toBe('0');
   });
 });
 

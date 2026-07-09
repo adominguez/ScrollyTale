@@ -240,20 +240,31 @@ function initScrollytelling() {
 
     if (!innerA) return;
 
-    // Threshold: no mostrar contenido hasta que el centro de la sección activa
-    // haya cruzado el umbral de entrada desde abajo (igual que en fire-and-forget).
+    // Threshold simétrico: entrada desde abajo (hi) y salida por arriba (lo).
+    // Usar el mismo valor de contentThreshold para ambos: si threshold=0.2,
+    // el contenido aparece cuando el centro baja del 80% del viewport y
+    // desaparece cuando el centro sube por encima del 20%.
     const hi = window.innerHeight * (1 - groupContentThreshold);
+    const lo = window.innerHeight * groupContentThreshold;
     const secARect = secA.getBoundingClientRect();
     const secACenter = secARect.top + secARect.height / 2;
+
+    // Umbral de entrada: aún no ha entrado desde abajo
     if (secACenter > hi) {
       innerA.style.transform = 'translate(100vw, -50%)'; innerA.style.opacity = '0';
       if (innerB) { innerB.style.transform = 'translate(100vw, -50%)'; innerB.style.opacity = '0'; }
       return;
     }
 
-    // Threshold superado: hacer visible con fade. Al cambiar opacity de '0'
-    // (inline) a '' (el valor CSS: 1) con transition activa, el navegador
-    // interpola el fade automáticamente.
+    // Umbral de salida para la última sección (sin transición a otra):
+    // cuando el centro sube por encima de lo, fade out temprano.
+    if ((secA === secB || !innerB) && secACenter < lo) {
+      innerA.style.opacity = '0';
+      innerA.style.transform = 'translate(0, -50%)';
+      return;
+    }
+
+    // Zona visible: fade in (opacity '' deja actuar el valor CSS: 1).
     innerA.style.opacity = '';
     if (innerB) innerB.style.opacity = '';
 
