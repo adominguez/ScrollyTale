@@ -80,10 +80,12 @@ function initScrollytelling() {
   }, 0);
 
   // En scrollSync el JS fija transform en cada frame; desactivamos la
-  // transición CSS para que el movimiento siga al scroll 1:1 sin retardo.
+  // transición de transform para que el movimiento siga al scroll 1:1.
+  // La transición de opacity se mantiene para que la entrada/salida del
+  // contenido al cruzar el threshold sea un fade suave, no un snap abrupto.
   if (scrollSyncMode) {
     contentSlideInners.forEach((inner) => {
-      inner.style.transition = 'none';
+      inner.style.transition = 'opacity 0.7s var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1))';
     });
   }
 
@@ -223,7 +225,7 @@ function initScrollytelling() {
     if (!sectionCenterInViewport(secA) && !sectionCenterInViewport(secB)) {
       contentSlideSections.forEach((sec) => {
         const inner = contentSlideInners.get(sec);
-        if (inner) inner.style.transform = 'translate(100vw, -50%)';
+        if (inner) { inner.style.transform = 'translate(100vw, -50%)'; inner.style.opacity = '0'; }
       });
       return;
     }
@@ -232,7 +234,7 @@ function initScrollytelling() {
     contentSlideSections.forEach((sec) => {
       if (sec !== secA && sec !== secB) {
         const inner = contentSlideInners.get(sec);
-        if (inner) inner.style.transform = 'translate(100vw, -50%)';
+        if (inner) { inner.style.transform = 'translate(100vw, -50%)'; inner.style.opacity = '0'; }
       }
     });
 
@@ -244,10 +246,16 @@ function initScrollytelling() {
     const secARect = secA.getBoundingClientRect();
     const secACenter = secARect.top + secARect.height / 2;
     if (secACenter > hi) {
-      innerA.style.transform = 'translate(100vw, -50%)';
-      if (innerB) innerB.style.transform = 'translate(100vw, -50%)';
+      innerA.style.transform = 'translate(100vw, -50%)'; innerA.style.opacity = '0';
+      if (innerB) { innerB.style.transform = 'translate(100vw, -50%)'; innerB.style.opacity = '0'; }
       return;
     }
+
+    // Threshold superado: hacer visible con fade. Al cambiar opacity de '0'
+    // (inline) a '' (el valor CSS: 1) con transition activa, el navegador
+    // interpola el fade automáticamente.
+    innerA.style.opacity = '';
+    if (innerB) innerB.style.opacity = '';
 
     if (secA === secB || !innerB) {
       innerA.style.transform = 'translate(0, -50%)';
