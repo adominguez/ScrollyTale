@@ -183,15 +183,16 @@ function initScrollytelling() {
       return;
     }
 
-    // Threshold: solo activar cuando el centro de la sección cae dentro de
-    // la zona [lo, hi] del viewport. Si está en el viewport pero fuera de
-    // la zona (entrando o saliendo del bloque), se preserva el estado actual
-    // sin ocultar — así no hay parpadeo al transicionar entre secciones.
-    const lo = window.innerHeight * groupContentThreshold;
+    // Threshold de entrada: solo activar cuando el centro de la sección ha
+    // cruzado el umbral desde abajo (center <= hi). Si todavía no lo ha
+    // cruzado, se preserva el estado actual sin ocultar — así no hay
+    // parpadeo al transicionar entre secciones. No se aplica umbral de
+    // salida por arriba: la desactivación la gestiona la transición a la
+    // siguiente sección o hideCurrentContentInner al salir del viewport.
     const hi = window.innerHeight * (1 - groupContentThreshold);
     const closestRect = closest.getBoundingClientRect();
     const closestCenter = closestRect.top + closestRect.height / 2;
-    if (closestCenter < lo || closestCenter > hi) return;
+    if (closestCenter > hi) return;
 
     if (closest !== currentContentSection) {
       // instant=true solo en la primera activación global (no en re-entradas

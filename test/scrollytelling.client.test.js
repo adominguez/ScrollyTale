@@ -362,9 +362,9 @@ describe('scrollytelling.client.js — contentThreshold', () => {
     return document.querySelectorAll('.scrolly-section');
   }
 
-  it('con contentThreshold=0.25 no activa el contenido cuando el centro está fuera de la zona [25%,75%]', async () => {
+  it('con contentThreshold=0.25 no activa cuando el centro aún está por debajo del umbral de entrada', async () => {
     const sections = buildDom('data-content-threshold="0.25"');
-    // innerHeight=800 → zona: [200, 600]. Centro en 700 → fuera → no activa
+    // innerHeight=800, hi = 0.75*800 = 600. Centro en 700 → 700 > 600 → no activa
     mockRect(sections[0], 650, 100);
     mockRect(sections[1], 5000, 100);
 
@@ -373,15 +373,37 @@ describe('scrollytelling.client.js — contentThreshold', () => {
     expect(document.getElementById('innerA').classList.contains('is-active')).toBe(false);
   });
 
-  it('con contentThreshold=0.25 activa el contenido cuando el centro está dentro de la zona [25%,75%]', async () => {
+  it('con contentThreshold=0.25 activa cuando el centro supera el umbral de entrada', async () => {
     const sections = buildDom('data-content-threshold="0.25"');
-    // Centro en 400 → dentro de [200, 600] → activa
+    // hi=600. Centro en 400 ≤ 600 → activa
     mockRect(sections[0], 350, 100);
     mockRect(sections[1], 5000, 100);
 
     await initEngine();
 
     expect(document.getElementById('innerA').classList.contains('is-active')).toBe(true);
+  });
+
+  it('con contentThreshold=0.5 activa cuando el centro llega al centro exacto del viewport', async () => {
+    const sections = buildDom('data-content-threshold="0.5"');
+    // hi = 0.5*800 = 400. Centro en 400 → 400 > 400 = false → activa
+    mockRect(sections[0], 350, 100);
+    mockRect(sections[1], 5000, 100);
+
+    await initEngine();
+
+    expect(document.getElementById('innerA').classList.contains('is-active')).toBe(true);
+  });
+
+  it('con contentThreshold=0.5 no activa cuando el centro aún está por debajo del centro del viewport', async () => {
+    const sections = buildDom('data-content-threshold="0.5"');
+    // hi=400. Centro en 600 → 600 > 400 → no activa
+    mockRect(sections[0], 550, 100);
+    mockRect(sections[1], 5000, 100);
+
+    await initEngine();
+
+    expect(document.getElementById('innerA').classList.contains('is-active')).toBe(false);
   });
 
   it('threshold en la primera sección retrasa la activación de la segunda aunque la segunda no tenga el atributo', async () => {
@@ -416,15 +438,15 @@ describe('scrollytelling.client.js — contentThreshold', () => {
 
   it('con contentThreshold, el contenido activo no se oculta al scrollear entre secciones (sin parpadeo)', async () => {
     const sections = buildDom('data-content-threshold="0.25"');
-    // Activar sección A con centro en zona
+    // Activar sección A (centro en 400 ≤ hi=600)
     mockRect(sections[0], 350, 100);
     mockRect(sections[1], 5000, 100);
 
     await initEngine();
     expect(document.getElementById('innerA').classList.contains('is-active')).toBe(true);
 
-    // Scroll: sección A sube (centro a 100, fuera de zona por arriba),
-    // sección B aún no ha entrado (centro a 700, fuera de zona por abajo).
+    // Scroll: sección A sube (centro a 100), sección B entra pero centro a 700 > hi=600.
+    // La sección A sigue siendo la más cercana al centro del viewport o igual que B.
     // El contenido debe permanecer visible — sin ocultar ni cambiar.
     mockRect(sections[0], 50, 100);
     mockRect(sections[1], 650, 100);
