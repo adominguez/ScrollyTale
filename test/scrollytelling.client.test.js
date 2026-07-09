@@ -179,6 +179,30 @@ describe('scrollytelling.client.js — contentTransition slide-horizontal', () =
     const innerA = document.getElementById('innerA');
     expect(innerA.classList.contains('is-active')).toBe(true);
     expect(innerA.classList.contains('is-leaving')).toBe(false);
+    // Activación instant: NO debe tener data-content-enter-from (solo la ruta animada lo pone)
+    expect(innerA.hasAttribute('data-content-enter-from')).toBe(false);
+  });
+
+  it('cuando ninguna sección está en el viewport al cargar, la primera activación por scroll usa animación', async () => {
+    const { sectionA, sectionB } = buildContentSlideDom();
+    // Ambas secciones fuera del viewport al cargar (debajo)
+    mockRect(sectionA, 2000, 100);
+    mockRect(sectionB, 5000, 100);
+
+    await initEngine();
+
+    const innerA = document.getElementById('innerA');
+    // Al cargar: ninguna sección en viewport → inner inactivo
+    expect(innerA.classList.contains('is-active')).toBe(false);
+
+    // El usuario scrollea hasta sectionA
+    mockRect(sectionA, 0, 100);
+    setScrollY(1950);
+    window.dispatchEvent(new Event('scroll'));
+
+    // Primera activación por scroll: debe ser animada (data-content-enter-from presente)
+    expect(innerA.classList.contains('is-active')).toBe(true);
+    expect(innerA.dataset.contentEnterFrom).toBe('right');
   });
 
   it('al desplazar el centro a la siguiente sección, la entrante se activa y la saliente pasa a is-leaving', async () => {

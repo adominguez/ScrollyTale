@@ -566,6 +566,13 @@ function initScrollytelling() {
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll);
   onScroll();
+  // Tras el rAF inicial, desactivar el modo "instant" para que las secciones
+  // a las que el usuario llegue haciendo scroll se animen con normalidad.
+  // (Las secciones ya centradas en el viewport al cargar la página se
+  // activaron con instant=true en el rAF de arriba, que se ejecuta antes.)
+  requestAnimationFrame(() => {
+    contentFirstActivation = false;
+  });
 
   cleanupPrev = function cleanup() {
     window.removeEventListener('scroll', onScroll);
