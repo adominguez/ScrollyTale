@@ -624,6 +624,27 @@ describe('scrollytelling.client.js — scrollSync: casos adicionales', () => {
     expect(document.getElementById('innerA').style.transform).toBe('translate(100vw, -50%)');
     expect(document.getElementById('innerB').style.transform).toBe('translate(100vw, -50%)');
   });
+
+  it('en modo scrollSync, oculta el inner mientras el centro de la sección no cruza el threshold', async () => {
+    document.body.innerHTML = `
+      <div id="scrollyStage" data-scroll-sync="true"></div>
+      <section class="scrolly-section" data-content-transition="slide-horizontal" data-content-threshold="0.5">
+        <div class="scrolly-inner" data-content-transition="slide-horizontal" id="innerA"></div>
+      </section>
+    `;
+    const section = document.querySelector('.scrolly-section');
+
+    // Centro en 600: por encima de hi=400 → inner oculto (threshold no cruzado)
+    mockRect(section, 550, 100);
+    await initEngine();
+    expect(document.getElementById('innerA').style.transform).toBe('translate(100vw, -50%)');
+
+    // Centro en 300: por debajo de hi=400 → inner visible (threshold cruzado)
+    mockRect(section, 250, 100);
+    setScrollY(300);
+    window.dispatchEvent(new Event('scroll'));
+    expect(document.getElementById('innerA').style.transform).toBe('translate(0, -50%)');
+  });
 });
 
 describe('scrollytelling.client.js — barra de progreso: casos adicionales', () => {

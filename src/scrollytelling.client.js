@@ -238,6 +238,17 @@ function initScrollytelling() {
 
     if (!innerA) return;
 
+    // Threshold: no mostrar contenido hasta que el centro de la sección activa
+    // haya cruzado el umbral de entrada desde abajo (igual que en fire-and-forget).
+    const hi = window.innerHeight * (1 - groupContentThreshold);
+    const secARect = secA.getBoundingClientRect();
+    const secACenter = secARect.top + secARect.height / 2;
+    if (secACenter > hi) {
+      innerA.style.transform = 'translate(100vw, -50%)';
+      if (innerB) innerB.style.transform = 'translate(100vw, -50%)';
+      return;
+    }
+
     if (secA === secB || !innerB) {
       innerA.style.transform = 'translate(0, -50%)';
       return;
