@@ -54,6 +54,7 @@ const backgrounds = [
 | `bgTransition`   | `'fade' \| 'slide-horizontal' \| 'slide-vertical' \| 'fade-visibility' \| 'zoom-in' \| 'zoom-out'` | `'fade'` | Cómo entra el fondo al activarse esta sección. |
 | `bgZoomScale`    | `number` | `0.15` | Intensidad del efecto en `zoom-in`/`zoom-out` (fracción de escala respecto a 1). Sin efecto en el resto de `bgTransition`. |
 | `contentTransition` | `'slide-horizontal'` | — | Slide horizontal del bloque de contenido al pasar entre secciones (incluso si comparten el mismo fondo). Compatible con `scrollSync`. Cuando se activa, `textTransition` se ignora (el motor JS gestiona el estado del inner directamente). |
+| `contentThreshold`  | `number` | `0` | Fracción del viewport (0–1) que se recorta por arriba y abajo para controlar cuándo aparece el contenido. Solo tiene efecto con `contentTransition`. Con `0` el contenido aparece en cuanto el centro de la sección entra en el viewport; con `0.25` solo cuando ese centro está entre el 25 % y el 75 % de la pantalla. |
 | `textTransition` | `'fade-up' \| 'fade-down' \| 'slide-left' \| 'slide-right' \| 'zoom-in'` | `'fade-up'` | Cómo aparece el texto al entrar en el viewport. Sin efecto si `contentTransition` está activo. |
 
 ### `ScrollyPinned`

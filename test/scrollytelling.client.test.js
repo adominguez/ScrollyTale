@@ -349,6 +349,63 @@ describe('scrollytelling.client.js — fondo: casos adicionales', () => {
   });
 });
 
+describe('scrollytelling.client.js — contentThreshold', () => {
+  function buildDom(thresholdAttr = '') {
+    document.body.innerHTML = `
+      <section class="scrolly-section" data-content-transition="slide-horizontal" ${thresholdAttr}>
+        <div class="scrolly-inner" data-content-transition="slide-horizontal" id="innerA"></div>
+      </section>
+      <section class="scrolly-section" data-content-transition="slide-horizontal" ${thresholdAttr}>
+        <div class="scrolly-inner" data-content-transition="slide-horizontal" id="innerB"></div>
+      </section>
+    `;
+    return document.querySelectorAll('.scrolly-section');
+  }
+
+  it('con contentThreshold=0.25 no activa el contenido cuando el centro está fuera de la zona [25%,75%]', async () => {
+    const sections = buildDom('data-content-threshold="0.25"');
+    // innerHeight=800 → zona: [200, 600]. Centro en 700 → fuera → no activa
+    mockRect(sections[0], 650, 100);
+    mockRect(sections[1], 5000, 100);
+
+    await initEngine();
+
+    expect(document.getElementById('innerA').classList.contains('is-active')).toBe(false);
+  });
+
+  it('con contentThreshold=0.25 activa el contenido cuando el centro está dentro de la zona [25%,75%]', async () => {
+    const sections = buildDom('data-content-threshold="0.25"');
+    // Centro en 400 → dentro de [200, 600] → activa
+    mockRect(sections[0], 350, 100);
+    mockRect(sections[1], 5000, 100);
+
+    await initEngine();
+
+    expect(document.getElementById('innerA').classList.contains('is-active')).toBe(true);
+  });
+
+  it('con contentThreshold, el contenido activo no se oculta al scrollear entre secciones (sin parpadeo)', async () => {
+    const sections = buildDom('data-content-threshold="0.25"');
+    // Activar sección A con centro en zona
+    mockRect(sections[0], 350, 100);
+    mockRect(sections[1], 5000, 100);
+
+    await initEngine();
+    expect(document.getElementById('innerA').classList.contains('is-active')).toBe(true);
+
+    // Scroll: sección A sube (centro a 100, fuera de zona por arriba),
+    // sección B aún no ha entrado (centro a 700, fuera de zona por abajo).
+    // El contenido debe permanecer visible — sin ocultar ni cambiar.
+    mockRect(sections[0], 50, 100);
+    mockRect(sections[1], 650, 100);
+    setScrollY(100);
+    window.dispatchEvent(new Event('scroll'));
+
+    expect(document.getElementById('innerA').classList.contains('is-active')).toBe(true);
+    expect(document.getElementById('innerB').classList.contains('is-active')).toBe(false);
+  });
+});
+
 describe('scrollytelling.client.js — contentTransition: casos adicionales', () => {
   function buildContentSlideDom() {
     document.body.innerHTML = `

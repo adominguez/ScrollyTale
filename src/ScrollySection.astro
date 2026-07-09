@@ -63,6 +63,7 @@ interface Props {
   bgTransition?: 'fade' | 'slide-horizontal' | 'slide-vertical' | 'fade-visibility' | 'zoom-in' | 'zoom-out';
   bgZoomScale?: number;
   contentTransition?: 'slide-horizontal';
+  contentThreshold?: number;
   textTransition?: 'fade-up' | 'fade-down' | 'slide-left' | 'slide-right' | 'zoom-in';
 }
 
@@ -75,6 +76,7 @@ const {
   bgTransition = 'fade',
   bgZoomScale = 0.15,
   contentTransition,
+  contentThreshold = 0,
   textTransition = 'fade-up',
 } = Astro.props;
 ---
@@ -85,6 +87,7 @@ const {
   data-bg-transition={bgTransition}
   data-bg-zoom-scale={bgZoomScale}
   data-content-transition={contentTransition}
+  data-content-threshold={contentTransition ? contentThreshold : undefined}
   id={id}
   style={`min-height:${minH}`}
 >

@@ -177,6 +177,17 @@ function initScrollytelling() {
       return;
     }
 
+    // Threshold: solo activar cuando el centro de la sección cae dentro de
+    // la zona [lo, hi] del viewport. Si está en el viewport pero fuera de
+    // la zona (entrando o saliendo del bloque), se preserva el estado actual
+    // sin ocultar — así no hay parpadeo al transicionar entre secciones.
+    const t = parseFloat(closest.dataset.contentThreshold || '0');
+    const lo = window.innerHeight * t;
+    const hi = window.innerHeight * (1 - t);
+    const closestRect = closest.getBoundingClientRect();
+    const closestCenter = closestRect.top + closestRect.height / 2;
+    if (closestCenter < lo || closestCenter > hi) return;
+
     if (closest !== currentContentSection) {
       // instant=true solo en la primera activación global (no en re-entradas
       // desde fuera del bloque), para evitar el slide de aparición inicial.

@@ -46,4 +46,19 @@ describe('ScrollySection.astro', () => {
     expect(html).toContain('data-content-transition="slide-horizontal"');
     expect(html).not.toContain('data-text-transition');
   });
+
+  it('con contentTransition, emite data-content-threshold con el valor por defecto (0)', async () => {
+    const html = await render({ bg: 'hero', contentTransition: 'slide-horizontal' });
+    expect(html).toContain('data-content-threshold="0"');
+  });
+
+  it('con contentTransition, propaga contentThreshold personalizado a data-content-threshold', async () => {
+    const html = await render({ bg: 'hero', contentTransition: 'slide-horizontal', contentThreshold: 0.25 });
+    expect(html).toContain('data-content-threshold="0.25"');
+  });
+
+  it('sin contentTransition, no emite data-content-threshold', async () => {
+    const html = await render({ bg: 'hero' });
+    expect(html).not.toContain('data-content-threshold');
+  });
 });
