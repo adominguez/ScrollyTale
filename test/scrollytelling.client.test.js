@@ -658,6 +658,115 @@ describe('scrollytelling.client.js — scrollSync: casos adicionales', () => {
   });
 });
 
+describe('scrollytelling.client.js — evento scrollytale:content-change', () => {
+  function buildSlideDom({ scrollSync = false, ids = ['secA', 'secB'] } = {}) {
+    const stage = scrollSync ? '<div id="scrollyStage" data-scroll-sync="true"></div>' : '';
+    const sections = ids.map((id) => `
+      <section class="scrolly-section" data-content-transition="slide-horizontal" data-bg-target="taller" id="${id}">
+        <div class="scrolly-inner" data-content-transition="slide-horizontal"></div>
+      </section>`).join('');
+    document.body.innerHTML = stage + sections;
+    return Array.from(document.querySelectorAll('.scrolly-section'));
+  }
+
+  it('en modo fire-and-forget, lanza el evento al activar la primera sección', async () => {
+    const [secA, secB] = buildSlideDom();
+    mockRect(secA, 0, 100);    // center=50 → en viewport
+    mockRect(secB, 2000, 100);
+
+    const events = [];
+    document.addEventListener('scrollytale:content-change', (e) => events.push(e.detail));
+
+    await initEngine();
+
+    expect(events).toHaveLength(1);
+    expect(events[0].index).toBe(0);
+    expect(events[0].total).toBe(2);
+    expect(events[0].section).toBe(secA);
+    expect(events[0].bgTarget).toBe('taller');
+    expect(events[0].id).toBe('secA');
+  });
+
+  it('en modo fire-and-forget, lanza el evento al cambiar de sección', async () => {
+    const [secA, secB] = buildSlideDom();
+    mockRect(secA, 0, 100);
+    mockRect(secB, 2000, 100);
+
+    const events = [];
+    document.addEventListener('scrollytale:content-change', (e) => events.push(e.detail));
+
+    await initEngine();
+    events.length = 0; // limpiar evento inicial
+
+    mockRect(secA, -2000, 100);
+    mockRect(secB, 0, 100);
+    setScrollY(100);
+    window.dispatchEvent(new Event('scroll'));
+
+    expect(events).toHaveLength(1);
+    expect(events[0].index).toBe(1);
+    expect(events[0].section).toBe(secB);
+    expect(events[0].id).toBe('secB');
+  });
+
+  it('en modo fire-and-forget, lanza index=-1 cuando el bloque sale del viewport', async () => {
+    const [secA, secB] = buildSlideDom();
+    mockRect(secA, 0, 100);
+    mockRect(secB, 2000, 100);
+
+    const events = [];
+    document.addEventListener('scrollytale:content-change', (e) => events.push(e.detail));
+
+    await initEngine();
+    events.length = 0;
+
+    mockRect(secA, -5000, 100);
+    mockRect(secB, -3000, 100);
+    setScrollY(5000);
+    window.dispatchEvent(new Event('scroll'));
+
+    expect(events).toHaveLength(1);
+    expect(events[0].index).toBe(-1);
+    expect(events[0].section).toBeNull();
+  });
+
+  it('en modo scrollSync, lanza el evento cuando el slide entra en la zona visible', async () => {
+    const [secA, secB] = buildSlideDom({ scrollSync: true });
+    mockRect(secA, 2000, 100); // fuera del viewport
+    mockRect(secB, 3000, 100);
+
+    const events = [];
+    document.addEventListener('scrollytale:content-change', (e) => events.push(e.detail));
+
+    await initEngine();
+    expect(events.filter((e) => e.index >= 0)).toHaveLength(0);
+
+    mockRect(secA, 0, 100); // center=50, dentro del viewport
+    setScrollY(1950);
+    window.dispatchEvent(new Event('scroll'));
+
+    expect(events.at(-1).index).toBe(0);
+    expect(events.at(-1).total).toBe(2);
+  });
+
+  it('no lanza el evento repetidamente si el índice no cambia', async () => {
+    const [secA, secB] = buildSlideDom();
+    mockRect(secA, 0, 100);
+    mockRect(secB, 2000, 100);
+
+    const events = [];
+    document.addEventListener('scrollytale:content-change', (e) => events.push(e.detail));
+
+    await initEngine();
+    const countAfterInit = events.length;
+
+    window.dispatchEvent(new Event('scroll'));
+    window.dispatchEvent(new Event('scroll'));
+
+    expect(events.length).toBe(countAfterInit); // sin duplicados
+  });
+});
+
 describe('scrollytelling.client.js — barra de progreso: casos adicionales', () => {
   it('cuando el documento no scrollea (scrollHeight === clientHeight), el ancho es 0%', async () => {
     document.body.innerHTML = `<div id="threadFill"></div>`;

@@ -93,6 +93,23 @@ function initScrollytelling() {
   // true solo hasta la primera activación (para no animar el estado inicial
   // si la página se carga con una sección slide ya centrada en el viewport).
   let contentFirstActivation = true;
+  let lastDispatchedContentIdx = -1;
+
+  function dispatchContentChange(idx) {
+    if (idx === lastDispatchedContentIdx) return;
+    lastDispatchedContentIdx = idx;
+    const section = idx >= 0 ? contentSlideSections[idx] : null;
+    document.dispatchEvent(new CustomEvent('scrollytale:content-change', {
+      bubbles: false,
+      detail: {
+        index: idx,                                          // 0-based, -1 si no hay ninguno
+        total: contentSlideSections.length,
+        section,
+        bgTarget: section ? section.dataset.bgTarget : null,
+        id: section ? (section.id || null) : null,
+      },
+    }));
+  }
 
   function cleanupContentInner(inner) {
     inner.classList.remove('is-leaving', 'is-active');
@@ -112,6 +129,7 @@ function initScrollytelling() {
       requestAnimationFrame(() => { inner.style.transition = ''; });
     }
     currentContentSection = null;
+    dispatchContentChange(-1);
   }
 
   // Devuelve true si el CENTRO de la sección está dentro del viewport.
@@ -139,6 +157,7 @@ function initScrollytelling() {
       requestAnimationFrame(() => { incomingInner.style.transition = ''; });
       currentContentSection = incoming;
       contentFirstActivation = false;
+      dispatchContentChange(contentSlideSections.indexOf(incoming));
       return;
     }
 
@@ -164,6 +183,7 @@ function initScrollytelling() {
 
     currentContentSection = incoming;
     contentFirstActivation = false;
+    dispatchContentChange(contentSlideSections.indexOf(incoming));
   }
 
   function updateContentSlide() {
@@ -227,6 +247,7 @@ function initScrollytelling() {
         const inner = contentSlideInners.get(sec);
         if (inner) { inner.style.transform = 'translate(100vw, -50%)'; inner.style.opacity = '0'; }
       });
+      dispatchContentChange(-1);
       return;
     }
 
@@ -253,6 +274,7 @@ function initScrollytelling() {
     if (secACenter > hi) {
       innerA.style.transform = 'translate(100vw, -50%)'; innerA.style.opacity = '0';
       if (innerB) { innerB.style.transform = 'translate(100vw, -50%)'; innerB.style.opacity = '0'; }
+      dispatchContentChange(-1);
       return;
     }
 
@@ -261,12 +283,14 @@ function initScrollytelling() {
     if ((secA === secB || !innerB) && secACenter < lo) {
       innerA.style.opacity = '0';
       innerA.style.transform = 'translate(0, -50%)';
+      dispatchContentChange(-1);
       return;
     }
 
     // Zona visible: fade in (opacity '' deja actuar el valor CSS: 1).
     innerA.style.opacity = '';
     if (innerB) innerB.style.opacity = '';
+    dispatchContentChange(idx);
 
     if (secA === secB || !innerB) {
       innerA.style.transform = 'translate(0, -50%)';
