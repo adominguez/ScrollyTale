@@ -72,12 +72,12 @@ function initScrollytelling() {
     const inner = sec.querySelector('.scrolly-inner');
     if (inner) contentSlideInners.set(sec, inner);
   });
-  // El threshold es un valor de grupo: se lee de la primera sección y se
-  // aplica igual a todas. Así basta con poner contentThreshold en una sola
-  // sección (o en todas con el mismo valor) y el comportamiento es coherente.
-  const groupContentThreshold = contentSlideSections.length > 0
-    ? parseFloat(contentSlideSections[0].dataset.contentThreshold || '0')
-    : 0;
+  // El threshold es un valor de grupo: se toma el máximo entre todas las
+  // secciones del bloque. Así basta con declararlo en una sola sección y
+  // aplica a todo el grupo aunque las demás no lo tengan.
+  const groupContentThreshold = contentSlideSections.reduce((max, sec) => {
+    return Math.max(max, parseFloat(sec.dataset.contentThreshold || '0'));
+  }, 0);
 
   // En scrollSync el JS fija transform en cada frame; desactivamos la
   // transición CSS para que el movimiento siga al scroll 1:1 sin retardo.
