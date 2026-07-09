@@ -72,6 +72,12 @@ function initScrollytelling() {
     const inner = sec.querySelector('.scrolly-inner');
     if (inner) contentSlideInners.set(sec, inner);
   });
+  // El threshold es un valor de grupo: se lee de la primera sección y se
+  // aplica igual a todas. Así basta con poner contentThreshold en una sola
+  // sección (o en todas con el mismo valor) y el comportamiento es coherente.
+  const groupContentThreshold = contentSlideSections.length > 0
+    ? parseFloat(contentSlideSections[0].dataset.contentThreshold || '0')
+    : 0;
 
   // En scrollSync el JS fija transform en cada frame; desactivamos la
   // transición CSS para que el movimiento siga al scroll 1:1 sin retardo.
@@ -181,9 +187,8 @@ function initScrollytelling() {
     // la zona [lo, hi] del viewport. Si está en el viewport pero fuera de
     // la zona (entrando o saliendo del bloque), se preserva el estado actual
     // sin ocultar — así no hay parpadeo al transicionar entre secciones.
-    const t = parseFloat(closest.dataset.contentThreshold || '0');
-    const lo = window.innerHeight * t;
-    const hi = window.innerHeight * (1 - t);
+    const lo = window.innerHeight * groupContentThreshold;
+    const hi = window.innerHeight * (1 - groupContentThreshold);
     const closestRect = closest.getBoundingClientRect();
     const closestCenter = closestRect.top + closestRect.height / 2;
     if (closestCenter < lo || closestCenter > hi) return;

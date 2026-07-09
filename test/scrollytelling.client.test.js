@@ -384,6 +384,36 @@ describe('scrollytelling.client.js — contentThreshold', () => {
     expect(document.getElementById('innerA').classList.contains('is-active')).toBe(true);
   });
 
+  it('threshold en la primera sección retrasa la activación de la segunda aunque la segunda no tenga el atributo', async () => {
+    // Caso real: usuario pone contentThreshold solo en la primera sección.
+    // El motor debe leer el threshold del grupo (primera sección) y aplicarlo
+    // a todas, incluida la segunda cuando pasa a ser la más cercana.
+    document.body.innerHTML = `
+      <section class="scrolly-section" data-content-transition="slide-horizontal" data-content-threshold="0.25">
+        <div class="scrolly-inner" data-content-transition="slide-horizontal" id="innerA"></div>
+      </section>
+      <section class="scrolly-section" data-content-transition="slide-horizontal">
+        <div class="scrolly-inner" data-content-transition="slide-horizontal" id="innerB"></div>
+      </section>
+    `;
+    const sections = document.querySelectorAll('.scrolly-section');
+    // Activar sección A (centro en zona)
+    mockRect(sections[0], 350, 100);
+    mockRect(sections[1], 5000, 100);
+    await initEngine();
+    expect(document.getElementById('innerA').classList.contains('is-active')).toBe(true);
+
+    // Sección B llega al viewport pero fuera de la zona [200, 600]: center=700
+    mockRect(sections[0], -2000, 100);
+    mockRect(sections[1], 650, 100);
+    setScrollY(100);
+    window.dispatchEvent(new Event('scroll'));
+
+    // Con threshold de grupo=0.25, sección B (center=700 > hi=600) NO debe activarse
+    expect(document.getElementById('innerB').classList.contains('is-active')).toBe(false);
+    expect(document.getElementById('innerA').classList.contains('is-active')).toBe(true);
+  });
+
   it('con contentThreshold, el contenido activo no se oculta al scrollear entre secciones (sin parpadeo)', async () => {
     const sections = buildDom('data-content-threshold="0.25"');
     // Activar sección A con centro en zona
