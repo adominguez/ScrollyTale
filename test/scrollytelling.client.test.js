@@ -11,6 +11,9 @@ class FakeIntersectionObserver {
   observe(el) {
     this.elements.push(el);
   }
+  unobserve(el) {
+    this.elements = this.elements.filter((e) => e !== el);
+  }
   disconnect() {
     this.disconnected = true;
   }
@@ -48,6 +51,7 @@ function mockVideoElement(el) {
   Object.defineProperty(el, 'paused', { value: true, writable: true, configurable: true });
   el.play = vi.fn(() => { el.paused = false; });
   el.pause = vi.fn(() => { el.paused = true; });
+  el.load = vi.fn();
   return el;
 }
 
@@ -364,6 +368,84 @@ describe('scrollytelling.client.js — vídeo de fondo', () => {
     expect(heroLayer.play).toHaveBeenCalled();
     expect(forestLayer.play).toHaveBeenCalled();
     expect(closingLayer.pause).toHaveBeenCalled();
+  });
+});
+
+describe('scrollytelling.client.js — lazy-load de vídeo de fondo', () => {
+  function buildLazyVideoDom() {
+    document.body.innerHTML = `
+      <video class="scrolly-bg scrolly-bg--video is-active" data-bg="hero"></video>
+      <video class="scrolly-bg scrolly-bg--video" data-bg="intro" data-video-src="/intro.mp4" data-video-mobile-src="/intro-mobile.mp4"></video>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade"></section>
+      <section class="scrolly-section" data-bg-target="intro" data-bg-transition="fade"></section>
+    `;
+    const heroLayer = document.querySelector('[data-bg="hero"]');
+    const introLayer = document.querySelector('[data-bg="intro"]');
+    mockVideoElement(heroLayer);
+    mockVideoElement(introLayer);
+    const sections = document.querySelectorAll('.scrolly-section');
+    mockRect(sections[0], 0, 100);
+    mockRect(sections[1], 5000, 100);
+    return { heroLayer, introLayer, heroSection: sections[0], introSection: sections[1] };
+  }
+
+  function findLazyObserverFor(section) {
+    return FakeIntersectionObserver.instances.find((inst) => inst.elements.includes(section));
+  }
+
+  it('no inyecta <source> ni llama a load() en una capa de vídeo que no es la activa inicial', async () => {
+    const { introLayer } = buildLazyVideoDom();
+
+    await initEngine();
+
+    expect(introLayer.querySelector('source')).toBeNull();
+    expect(introLayer.load).not.toHaveBeenCalled();
+  });
+
+  it('al acercarse la sección (IntersectionObserver con rootMargin), inyecta los <source> y llama a load()', async () => {
+    const { introLayer, introSection } = buildLazyVideoDom();
+
+    await initEngine();
+
+    const lazyObserver = findLazyObserverFor(introSection);
+    expect(lazyObserver).toBeDefined();
+    lazyObserver.cb([{ isIntersecting: true, target: introSection }]);
+
+    const sources = introLayer.querySelectorAll('source');
+    expect(sources).toHaveLength(2);
+    expect(introLayer.querySelector('source[media="(max-width: 560px)"]').src).toContain('/intro-mobile.mp4');
+    expect(introLayer.load).toHaveBeenCalled();
+  });
+
+  it('deja de observar la sección tras cargar el vídeo (disparo único)', async () => {
+    const { introSection } = buildLazyVideoDom();
+
+    await initEngine();
+
+    const lazyObserver = findLazyObserverFor(introSection);
+    lazyObserver.cb([{ isIntersecting: true, target: introSection }]);
+
+    expect(lazyObserver.elements).not.toContain(introSection);
+  });
+
+  it('un entry no intersecting no dispara la carga', async () => {
+    const { introLayer, introSection } = buildLazyVideoDom();
+
+    await initEngine();
+
+    const lazyObserver = findLazyObserverFor(introSection);
+    lazyObserver.cb([{ isIntersecting: false, target: introSection }]);
+
+    expect(introLayer.querySelector('source')).toBeNull();
+    expect(introLayer.load).not.toHaveBeenCalled();
+  });
+
+  it('la capa activa inicial no se observa (ya viene cargada del servidor)', async () => {
+    const { heroSection } = buildLazyVideoDom();
+
+    await initEngine();
+
+    expect(findLazyObserverFor(heroSection)).toBeUndefined();
   });
 });
 

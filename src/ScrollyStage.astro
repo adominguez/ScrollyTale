@@ -39,6 +39,15 @@
 // media="(max-width: 560px)">, que el navegador solo reevalúa al cargar el
 // recurso (no en cada resize en vivo, a diferencia del CSS var de
 // imageMobile). poster es opcional y se muestra mientras el vídeo carga.
+//
+// Lazy-load de vídeo: solo el primer fondo (el que se ve desde el primer
+// frame) lleva <source> en el HTML servido, así que el navegador empieza a
+// descargarlo de inmediato. El resto de fondos de vídeo se sirven SIN
+// <source> — solo con la URL guardada en data-video-src/data-video-mobile-
+// src — y es el motor cliente quien crea el <source> y llama a video.load()
+// cuando el usuario está a punto de llegar a la sección que los activa (ver
+// scrollytelling.client.js). Así no se descargan de golpe todos los vídeos
+// de una página al cargarla, solo los que el usuario realmente visita.
 
 interface Background {
   id: string;
@@ -65,14 +74,16 @@ const { backgrounds, scrollSync = false } = Astro.props;
         class="scrolly-bg scrolly-bg--video"
         class:list={[{ 'is-active': i === 0 }]}
         data-bg={bg.id}
+        data-video-src={i === 0 ? undefined : bg.video}
+        data-video-mobile-src={i === 0 ? undefined : bg.videoMobile}
         muted
         loop
         playsinline
-        preload={i === 0 ? 'auto' : 'metadata'}
+        preload={i === 0 ? 'auto' : 'none'}
         poster={bg.poster}
       >
-        {bg.videoMobile && <source src={bg.videoMobile} media="(max-width: 560px)" />}
-        <source src={bg.video} />
+        {i === 0 && bg.videoMobile && <source src={bg.videoMobile} media="(max-width: 560px)" />}
+        {i === 0 && <source src={bg.video} />}
       </video>
     ) : (
       <div

@@ -22,7 +22,13 @@
 //                                                gestiona play()/pause() del
 //                                                vídeo según qué capa(s)
 //                                                estén visibles, detectando
-//                                                el tag por duck typing)
+//                                                el tag por duck typing, y
+//                                                además carga el <source> de
+//                                                los vídeos que no son la
+//                                                capa inicial de forma lazy,
+//                                                solo cuando el usuario está
+//                                                a punto de llegar a la
+//                                                sección que los activa)
 //   - .scrolly-section[data-bg-target]         (cada ScrollySection)
 //   - .scrolly-section[data-bg-transition]     (cómo entra el fondo: fade /
 //                                                slide-horizontal / slide-vertical /
@@ -364,6 +370,59 @@ function initScrollytelling() {
   let currentBg = Object.keys(bgLayers).find((id) => bgLayers[id].classList.contains('is-active'));
   if (currentBg) playLayer(bgLayers[currentBg]);
 
+  /* ---------- lazy-load de vídeo: las capas de vídeo que no son la activa
+     al cargar la página vienen del servidor SIN <source> (solo con la URL en
+     data-video-src/data-video-mobile-src, ver ScrollyStage.astro), así que
+     el navegador no descarga nada de ellas todavía. Observamos las
+     secciones que las activan con un rootMargin de un viewport de alto, así
+     que el <source> se inyecta y se llama a video.load() cuando el usuario
+     está a punto de llegar (no cuando la sección ya está en pantalla, para
+     dar tiempo a que el vídeo tenga algo de buffer). Una vez cargada una
+     capa, se deja de observar sus secciones: es un disparo único. ---------- */
+  function loadVideoLayer(video) {
+    if (!video || video.querySelector('source')) return;
+    if (video.dataset.videoMobileSrc) {
+      const mobileSource = document.createElement('source');
+      mobileSource.src = video.dataset.videoMobileSrc;
+      mobileSource.media = '(max-width: 560px)';
+      video.appendChild(mobileSource);
+    }
+    if (video.dataset.videoSrc) {
+      const source = document.createElement('source');
+      source.src = video.dataset.videoSrc;
+      video.appendChild(source);
+    }
+    video.load();
+  }
+
+  const pendingVideoIds = Object.keys(bgLayers).filter(
+    (id) => id !== currentBg && isVideoLayer(bgLayers[id]) && bgLayers[id].dataset.videoSrc
+  );
+  let lazyVideoObserver = null;
+  if (pendingVideoIds.length > 0) {
+    const sectionsByBg = {};
+    sections.forEach((s) => {
+      const id = s.dataset.bgTarget;
+      (sectionsByBg[id] || (sectionsByBg[id] = [])).push(s);
+    });
+
+    lazyVideoObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const id = entry.target.dataset.bgTarget;
+          loadVideoLayer(bgLayers[id]);
+          (sectionsByBg[id] || []).forEach((s) => lazyVideoObserver.unobserve(s));
+        });
+      },
+      { rootMargin: `${window.innerHeight}px 0px` }
+    );
+
+    pendingVideoIds.forEach((id) => {
+      (sectionsByBg[id] || []).forEach((s) => lazyVideoObserver.observe(s));
+    });
+  }
+
   // Dirección de scroll: 'down' | 'up'. Se usa solo para decidir el SENTIDO
   // del slide (desde dónde entra la capa nueva) en el modo "fire-and-forget"
   // (sin scrollSync); no afecta al fade ni se usa en modo scrollSync, donde
@@ -678,6 +737,7 @@ function initScrollytelling() {
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onScroll);
     revealObserver.disconnect();
+    if (lazyVideoObserver) lazyVideoObserver.disconnect();
   };
 }
 
