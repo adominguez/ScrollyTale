@@ -46,3 +46,46 @@ describe('ScrollyStage.astro', () => {
     expect(html).toMatch(/<script type="module" src="[^"]+"><\/script>/);
   });
 });
+
+describe('ScrollyStage.astro — backgrounds de vídeo', () => {
+  const videoBackgrounds = [
+    { id: 'hero', image: '/bg-hero.webp' },
+    {
+      id: 'intro',
+      type: 'video',
+      video: '/bg-intro.mp4',
+      videoMobile: '/bg-intro-mobile.mp4',
+      poster: '/bg-intro.webp',
+    },
+  ];
+
+  it('pinta un <video> con class scrolly-bg--video en vez de un <div> para type="video"', async () => {
+    const html = await render({ backgrounds: videoBackgrounds });
+    expect(html).toMatch(/<video class="scrolly-bg scrolly-bg--video"[^>]*data-bg="intro"/);
+    expect(html).toMatch(/<div class="scrolly-bg is-active"[^>]*data-bg="hero"/);
+  });
+
+  it('incluye source de video y videoMobile con el media query de 560px, y el poster', async () => {
+    const html = await render({ backgrounds: videoBackgrounds });
+    expect(html).toContain('<source src="/bg-intro-mobile.mp4" media="(max-width: 560px)"');
+    expect(html).toContain('<source src="/bg-intro.mp4"');
+    expect(html).toContain('poster="/bg-intro.webp"');
+  });
+
+  it('el <video> lleva muted, loop y playsinline, sin autoplay', async () => {
+    const html = await render({ backgrounds: videoBackgrounds });
+    const videoTag = html.match(/<video[^>]*data-bg="intro"[^>]*>/)?.[0] ?? '';
+    expect(videoTag).toContain('muted');
+    expect(videoTag).toContain('loop');
+    expect(videoTag).toContain('playsinline');
+    expect(videoTag).not.toContain('autoplay');
+  });
+
+  it('sin videoMobile, no incluye el <source> de mobile', async () => {
+    const html = await render({
+      backgrounds: [{ id: 'intro', type: 'video', video: '/bg-intro.mp4' }],
+    });
+    expect(html).not.toContain('media="(max-width: 560px)"');
+    expect(html).toContain('<source src="/bg-intro.mp4"');
+  });
+});

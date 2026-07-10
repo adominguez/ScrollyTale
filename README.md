@@ -23,6 +23,7 @@ import ScrollySection from 'scrollytale/ScrollySection.astro';
 const backgrounds = [
   { id: 'hero', image: '/assets/bg-hero.webp' },
   { id: 'forest', image: '/assets/bg-forest.webp', imageMobile: '/assets/bg-forest-mobile.webp' },
+  { id: 'intro', type: 'video', video: '/assets/bg-intro.mp4', poster: '/assets/bg-intro.webp' },
 ];
 ---
 
@@ -40,7 +41,7 @@ const backgrounds = [
 
 | Prop          | Tipo         | Default | Descripción |
 | ------------- | ------------ | ------- | ----------- |
-| `backgrounds` | `Background[]` | — | `{ id, image, imageMobile? }`. `imageMobile` se usa por debajo de 560px si está definida. |
+| `backgrounds` | `Background[]` | — | `{ id, type?, image?, imageMobile?, video?, videoMobile?, poster? }`. `type` es `'image'` (default) o `'video'`. Con `type: 'image'`: `imageMobile` se usa por debajo de 560px si está definida. Con `type: 'video'`: `video` es la URL del vídeo (se reproduce en loop, muted, sin controles); `videoMobile` es el equivalente a `imageMobile` pero para vídeo, vía `<source media="(max-width: 560px)">` (el navegador solo lo reevalúa al cargar el recurso, no en cada resize en vivo); `poster` es opcional y se muestra mientras el vídeo carga. El motor cliente hace play()/pause() automáticamente según qué fondo esté visible, para no gastar recursos con vídeos fuera de pantalla. |
 | `scrollSync`  | `boolean`    | `false` | `false`: el fondo cambia con una transición de duración fija al activarse una sección. `true`: el progreso del fondo se calcula en cada frame a partir de la posición real de scroll (scrub). |
 
 ### `ScrollySection`

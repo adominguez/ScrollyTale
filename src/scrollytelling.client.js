@@ -15,7 +15,14 @@
 //                                                así que hay que comparar
 //                                                el valor, no solo mirar
 //                                                si el atributo existe)
-//   - .scrolly-bg[data-bg]                    (capas de fondo en ScrollyStage)
+//   - .scrolly-bg[data-bg]                    (capas de fondo en ScrollyStage;
+//                                                pueden ser <div> con imagen
+//                                                CSS o <video> si la escena
+//                                                es type="video" — el motor
+//                                                gestiona play()/pause() del
+//                                                vídeo según qué capa(s)
+//                                                estén visibles, detectando
+//                                                el tag por duck typing)
 //   - .scrolly-section[data-bg-target]         (cada ScrollySection)
 //   - .scrolly-section[data-bg-transition]     (cómo entra el fondo: fade /
 //                                                slide-horizontal / slide-vertical /
@@ -336,7 +343,26 @@ function initScrollytelling() {
     bgLayers[el.dataset.bg] = el;
   });
 
+  // Capas de vídeo: nunca llevan el atributo autoplay (para no reproducir de
+  // fondo escenas que aún no están activas), así que el play/pause lo
+  // gestiona el motor por completo según qué capa(s) estén visibles en cada
+  // momento. play() se ignora si ya está reproduciendo (idempotente), así
+  // que se puede llamar en cada frame sin coste real.
+  function isVideoLayer(layer) {
+    return layer.tagName === 'VIDEO';
+  }
+  function playLayer(layer) {
+    if (!isVideoLayer(layer)) return;
+    const p = layer.play();
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  }
+  function pauseLayer(layer) {
+    if (!isVideoLayer(layer) || layer.paused) return;
+    layer.pause();
+  }
+
   let currentBg = Object.keys(bgLayers).find((id) => bgLayers[id].classList.contains('is-active'));
+  if (currentBg) playLayer(bgLayers[currentBg]);
 
   // Dirección de scroll: 'down' | 'up'. Se usa solo para decidir el SENTIDO
   // del slide (desde dónde entra la capa nueva) en el modo "fire-and-forget"
@@ -360,6 +386,20 @@ function initScrollytelling() {
     // Limpia restos de transiciones anteriores en ambas capas.
     if (outgoing) cleanupLayer(outgoing);
     cleanupLayer(incoming);
+
+    // Si son vídeos: arranca la entrante ya (para que no se vea congelada
+    // en el primer frame del crossfade) y pausa la saliente en cuanto
+    // termine de transicionar fuera, para no gastar CPU/batería con vídeos
+    // que ya no se ven.
+    playLayer(incoming);
+    if (outgoing) {
+      const onOutgoingIdle = (e) => {
+        if (e.propertyName !== 'opacity' && e.propertyName !== 'transform') return;
+        outgoing.removeEventListener('transitionend', onOutgoingIdle);
+        if (!outgoing.classList.contains('is-active')) pauseLayer(outgoing);
+      };
+      outgoing.addEventListener('transitionend', onOutgoingIdle);
+    }
 
     if (transitionType === 'fade') {
       // Fade puro: basta con alternar is-active, la transición de opacity
@@ -530,15 +570,21 @@ function initScrollytelling() {
     const layerA = bgLayers[bgIdA];
     const layerB = bgLayers[bgIdB];
 
-    // Esconde cualquier capa que no forme parte del par actual.
+    // Esconde cualquier capa que no forme parte del par actual y, si es
+    // vídeo, la pausa (no hace falta gastar CPU/batería reproduciendo algo
+    // que no se ve). Las del par activo se mantienen reproduciendo.
     Object.keys(bgLayers).forEach((id) => {
+      const layer = bgLayers[id];
       if (id !== bgIdA && id !== bgIdB) {
-        bgLayers[id].style.opacity = '0';
-        bgLayers[id].style.visibility = 'hidden';
+        layer.style.opacity = '0';
+        layer.style.visibility = 'hidden';
+        pauseLayer(layer);
       }
     });
 
     if (!layerA) return;
+    playLayer(layerA);
+    if (layerB) playLayer(layerB);
 
     if (sectionA === sectionB || bgIdA === bgIdB || !layerB) {
       // Última sección, o dos secciones consecutivas con el mismo fondo:

@@ -30,11 +30,24 @@
 // proyecto. Se resuelve solo con CSS vía custom properties + media query,
 // así que el motor cliente no necesita saber nada de esto. Si una escena
 // no define imageMobile, sigue usando image también en mobile.
+//
+// type="video" (opcional, por fondo, default "image"): en vez de una imagen
+// CSS, la capa es un <video> (muted/loop/playsinline, autoplay gestionado
+// por el motor cliente vía play()/pause() — nunca con el atributo autoplay,
+// para no reproducir de fondo escenas que aún no están activas). videoMobile
+// es igual que imageMobile pero para vídeo: se resuelve con un <source
+// media="(max-width: 560px)">, que el navegador solo reevalúa al cargar el
+// recurso (no en cada resize en vivo, a diferencia del CSS var de
+// imageMobile). poster es opcional y se muestra mientras el vídeo carga.
 
 interface Background {
   id: string;
-  image: string;
+  type?: 'image' | 'video';
+  image?: string;
   imageMobile?: string;
+  video?: string;
+  videoMobile?: string;
+  poster?: string;
 }
 
 interface Props {
@@ -47,12 +60,28 @@ const { backgrounds, scrollSync = false } = Astro.props;
 
 <div class="scrolly-stage" id="scrollyStage" data-scroll-sync={scrollSync}>
   {backgrounds.map((bg, i) => (
-    <div
-      class="scrolly-bg"
-      class:list={[{ 'is-active': i === 0 }]}
-      data-bg={bg.id}
-      style={`--bg-image:url('${bg.image}');${bg.imageMobile ? `--bg-image-mobile:url('${bg.imageMobile}');` : ''}`}
-    ></div>
+    bg.type === 'video' ? (
+      <video
+        class="scrolly-bg scrolly-bg--video"
+        class:list={[{ 'is-active': i === 0 }]}
+        data-bg={bg.id}
+        muted
+        loop
+        playsinline
+        preload={i === 0 ? 'auto' : 'metadata'}
+        poster={bg.poster}
+      >
+        {bg.videoMobile && <source src={bg.videoMobile} media="(max-width: 560px)" />}
+        <source src={bg.video} />
+      </video>
+    ) : (
+      <div
+        class="scrolly-bg"
+        class:list={[{ 'is-active': i === 0 }]}
+        data-bg={bg.id}
+        style={`--bg-image:url('${bg.image}');${bg.imageMobile ? `--bg-image-mobile:url('${bg.imageMobile}');` : ''}`}
+      ></div>
+    )
   ))}
   <div class="scrolly-overlay"></div>
 </div>
@@ -91,6 +120,16 @@ const { backgrounds, scrollSync = false } = Astro.props;
     .scrolly-bg {
       background-image: var(--bg-image-mobile, var(--bg-image));
     }
+  }
+  /* Capas de vídeo: mismas reglas de posición/transición que .scrolly-bg
+     (heredadas de arriba), solo añadimos cómo rellena la caja, ya que un
+     <video> no estira solo con inset:0 como sí hace un div. */
+  .scrolly-bg--video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
   }
   /* La capa entrante (is-active) siempre queda por encima de la
      saliente (is-leaving) para que el slide la "tape" al avanzar. */

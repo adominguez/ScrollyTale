@@ -38,6 +38,19 @@ function setDocScroll({ scrollTop = 0, scrollHeight = 0, clientHeight = 0 } = {}
   Object.defineProperty(document.documentElement, 'clientHeight', { value: clientHeight, configurable: true });
 }
 
+// jsdom no implementa HTMLMediaElement.play()/pause() (loguean "not
+// implemented" y no tocan el estado real), así que para las capas de vídeo
+// las sustituimos por spies propios que además mantienen `paused` en un
+// data property propia (por defecto es un getter de solo lectura en el
+// prototipo), para poder ejercitar el guard `if (layer.paused) return;` de
+// pauseLayer() tal cual lo ve el motor en un navegador real.
+function mockVideoElement(el) {
+  Object.defineProperty(el, 'paused', { value: true, writable: true, configurable: true });
+  el.play = vi.fn(() => { el.paused = false; });
+  el.pause = vi.fn(() => { el.paused = true; });
+  return el;
+}
+
 async function initEngine() {
   await import('../src/scrollytelling.client.js');
   document.dispatchEvent(new Event('astro:page-load'));
@@ -250,6 +263,107 @@ describe('scrollytelling.client.js — scrollSync', () => {
     expect(forestLayer.style.opacity).toBe('0.5');
     expect(heroLayer.style.visibility).toBe('visible');
     expect(forestLayer.style.visibility).toBe('visible');
+  });
+});
+
+describe('scrollytelling.client.js — vídeo de fondo', () => {
+  it('reproduce automáticamente la capa de vídeo activa al iniciar', async () => {
+    document.body.innerHTML = `
+      <video class="scrolly-bg is-active" data-bg="hero"></video>
+      <div class="scrolly-bg" data-bg="forest"></div>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade"></section>
+    `;
+    const heroLayer = document.querySelector('[data-bg="hero"]');
+    mockVideoElement(heroLayer);
+    mockRect(document.querySelector('.scrolly-section'), 0, 100);
+
+    await initEngine();
+
+    expect(heroLayer.play).toHaveBeenCalled();
+  });
+
+  it('en modo fire-and-forget, reproduce la capa entrante y pausa la saliente al terminar la transición', async () => {
+    document.body.innerHTML = `
+      <video class="scrolly-bg is-active" data-bg="hero"></video>
+      <video class="scrolly-bg" data-bg="forest"></video>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade"></section>
+      <section class="scrolly-section" data-bg-target="forest" data-bg-transition="fade"></section>
+    `;
+    const heroLayer = document.querySelector('[data-bg="hero"]');
+    const forestLayer = document.querySelector('[data-bg="forest"]');
+    mockVideoElement(heroLayer);
+    mockVideoElement(forestLayer);
+    heroLayer.paused = false; // simula que ya estaba reproduciéndose al ser la activa inicial
+    const sections = document.querySelectorAll('.scrolly-section');
+    mockRect(sections[0], -1000, 100);
+    mockRect(sections[1], 0, 100);
+
+    await initEngine();
+
+    expect(forestLayer.classList.contains('is-active')).toBe(true);
+    expect(forestLayer.play).toHaveBeenCalled();
+    // Todavía no ha terminado la transición CSS de la saliente: no se pausa aún.
+    expect(heroLayer.pause).not.toHaveBeenCalled();
+
+    const done = new Event('transitionend');
+    done.propertyName = 'opacity';
+    heroLayer.dispatchEvent(done);
+
+    expect(heroLayer.pause).toHaveBeenCalled();
+  });
+
+  it('un transitionend con propiedad irrelevante no pausa la capa saliente de vídeo', async () => {
+    document.body.innerHTML = `
+      <video class="scrolly-bg is-active" data-bg="hero"></video>
+      <video class="scrolly-bg" data-bg="forest"></video>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade"></section>
+      <section class="scrolly-section" data-bg-target="forest" data-bg-transition="fade"></section>
+    `;
+    const heroLayer = document.querySelector('[data-bg="hero"]');
+    const forestLayer = document.querySelector('[data-bg="forest"]');
+    mockVideoElement(heroLayer);
+    mockVideoElement(forestLayer);
+    heroLayer.paused = false;
+    const sections = document.querySelectorAll('.scrolly-section');
+    mockRect(sections[0], -1000, 100);
+    mockRect(sections[1], 0, 100);
+
+    await initEngine();
+
+    const irrelevant = new Event('transitionend');
+    irrelevant.propertyName = 'color';
+    heroLayer.dispatchEvent(irrelevant);
+
+    expect(heroLayer.pause).not.toHaveBeenCalled();
+  });
+
+  it('en modo scrollSync, reproduce el par de capas de vídeo visibles y pausa el resto', async () => {
+    document.body.innerHTML = `
+      <div id="scrollyStage" data-scroll-sync="true"></div>
+      <video class="scrolly-bg" data-bg="hero"></video>
+      <video class="scrolly-bg" data-bg="forest"></video>
+      <video class="scrolly-bg" data-bg="closing"></video>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade"></section>
+      <section class="scrolly-section" data-bg-target="forest" data-bg-transition="fade"></section>
+      <section class="scrolly-section" data-bg-target="closing" data-bg-transition="fade"></section>
+    `;
+    const heroLayer = document.querySelector('[data-bg="hero"]');
+    const forestLayer = document.querySelector('[data-bg="forest"]');
+    const closingLayer = document.querySelector('[data-bg="closing"]');
+    [heroLayer, forestLayer, closingLayer].forEach(mockVideoElement);
+    closingLayer.paused = false; // simula que venía reproduciéndose de un estado anterior
+
+    const sections = document.querySelectorAll('.scrolly-section');
+    mockRect(sections[0], 0, 0);
+    mockRect(sections[1], 800, 0);
+    mockRect(sections[2], 5000, 0);
+    setScrollY(0);
+
+    await initEngine();
+
+    expect(heroLayer.play).toHaveBeenCalled();
+    expect(forestLayer.play).toHaveBeenCalled();
+    expect(closingLayer.pause).toHaveBeenCalled();
   });
 });
 
