@@ -47,6 +47,23 @@ describe('ScrollyStage.astro', () => {
   });
 });
 
+describe('ScrollyStage.astro — overlay', () => {
+  it('sin overlay, usa el gradient oscuro por defecto', async () => {
+    const html = await render({ backgrounds });
+    expect(html).toMatch(/<div class="scrolly-overlay" id="scrollyOverlay" style="background:linear-gradient\(180deg, rgba\(10, 8, 6, 0\.35\) 0%, rgba\(10, 8, 6, 0\.55\) 100%\);"/);
+  });
+
+  it('overlay con un valor CSS custom lo aplica como background', async () => {
+    const html = await render({ backgrounds, overlay: 'rgba(0, 0, 0, 0.6)' });
+    expect(html).toContain('<div class="scrolly-overlay" id="scrollyOverlay" style="background:rgba(0, 0, 0, 0.6);"');
+  });
+
+  it('overlay={false} deja la capa en el DOM (el motor la necesita para secciones que sí quieran overlay) pero con background transparent', async () => {
+    const html = await render({ backgrounds, overlay: false });
+    expect(html).toContain('<div class="scrolly-overlay" id="scrollyOverlay" style="background:transparent;"');
+  });
+});
+
 describe('ScrollyStage.astro — backgrounds de vídeo', () => {
   it('pinta un <video> con class scrolly-bg--video en vez de un <div> para type="video"', async () => {
     const html = await render({

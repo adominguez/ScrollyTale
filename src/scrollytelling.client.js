@@ -33,6 +33,15 @@
 //   - .scrolly-section[data-bg-transition]     (cómo entra el fondo: fade /
 //                                                slide-horizontal / slide-vertical /
 //                                                fade-visibility / zoom-in / zoom-out)
+//   - .scrolly-section[data-overlay]           (opcional; valor CSS de
+//                                                `background` para #scrollyOverlay
+//                                                mientras esta sección es la más
+//                                                cercana al centro del viewport.
+//                                                Sin este atributo, se hereda el
+//                                                overlay por defecto del Stage)
+//   - #scrollyOverlay                          (capa de overlay de ScrollyStage;
+//                                                opcional, el motor no hace nada
+//                                                si no existe en el DOM)
 //   - .scrolly-section[data-content-transition] (cómo se mueve el contenido
 //                                                entre secciones con mismo fondo:
 //                                                slide-horizontal)
@@ -349,6 +358,29 @@ function initScrollytelling() {
     bgLayers[el.dataset.bg] = el;
   });
 
+  /* ---------- overlay por sección (opcional) ----------
+     .scrolly-overlay es una única capa global (no una por escena, a
+     diferencia de .scrolly-bg): el motor le cambia `background` sobre la
+     marcha según qué sección esté activa. defaultOverlay es el valor que
+     ya trae inline desde ScrollyStage (prop overlay, con fallback al
+     gradient por defecto); las secciones sin data-overlay heredan ese
+     valor. El crossfade entre valores lo da la transición CSS de
+     `background` definida en ScrollyStage.astro, así que aquí basta con
+     fijar el valor final. */
+  const overlayEl = document.getElementById('scrollyOverlay');
+  const defaultOverlay = overlayEl ? overlayEl.style.background : '';
+  let currentOverlayValue = defaultOverlay;
+
+  function resolveOverlay(section) {
+    if (!section || section.dataset.overlay === undefined) return defaultOverlay;
+    return section.dataset.overlay;
+  }
+  function setOverlay(value) {
+    if (!overlayEl || value === currentOverlayValue) return;
+    currentOverlayValue = value;
+    overlayEl.style.background = value;
+  }
+
   // Capas de vídeo: nunca llevan el atributo autoplay (para no reproducir de
   // fondo escenas que aún no están activas), así que el play/pause lo
   // gestiona el motor por completo según qué capa(s) estén visibles en cada
@@ -550,6 +582,7 @@ function initScrollytelling() {
         activateBackground(target, transitionType, zoomScale);
       }
     }
+    setOverlay(resolveOverlay(closest));
   }
 
   /* ---------- scrollSync: progreso continuo atado al scroll, sin
@@ -629,6 +662,17 @@ function initScrollytelling() {
     const layerA = bgLayers[bgIdA];
     const layerB = bgLayers[bgIdB];
 
+    // Overlay: se decide por la sección "dominante" del par (progress
+    // < 0.5 → aún más cerca de A, si no de B), calculado aquí arriba y
+    // reutilizado más abajo para applySyncedTransition. Es independiente
+    // del bg: dos secciones consecutivas pueden compartir fondo y aun así
+    // llevar overlays distintos.
+    const centerA = sectionDocCenter(sectionA);
+    const centerB = sectionDocCenter(sectionB);
+    let progress = centerB === centerA ? 1 : (centerDocY - centerA) / (centerB - centerA);
+    progress = Math.min(1, Math.max(0, progress));
+    setOverlay(resolveOverlay(progress < 0.5 ? sectionA : sectionB));
+
     // Esconde cualquier capa que no forme parte del par actual y, si es
     // vídeo, la pausa (no hace falta gastar CPU/batería reproduciendo algo
     // que no se ve). Las del par activo se mantienen reproduciendo.
@@ -654,11 +698,6 @@ function initScrollytelling() {
       layerA.style.zIndex = '2';
       return;
     }
-
-    const centerA = sectionDocCenter(sectionA);
-    const centerB = sectionDocCenter(sectionB);
-    let progress = centerB === centerA ? 1 : (centerDocY - centerA) / (centerB - centerA);
-    progress = Math.min(1, Math.max(0, progress));
 
     const transitionType = sectionB.dataset.bgTransition || 'fade';
     const zoomScale = parseFloat(sectionB.dataset.bgZoomScale) || 0.15;

@@ -53,6 +53,14 @@
 //                       "slide-left" — fade + entra desde la izquierda
 //                       "slide-right"— fade + entra desde la derecha
 //                       "zoom-in"    — fade + escala desde 0.92 a 1
+//   overlay        — valor CSS para `background` de la capa de overlay
+//                    (.scrolly-overlay en ScrollyStage) mientras esta
+//                    sección es la más cercana al centro del viewport. Si
+//                    no se indica, se hereda el overlay por defecto de
+//                    <ScrollyStage overlay="...">. Pásale overlay={false}
+//                    para que esta sección en concreto no lleve overlay
+//                    (equivale a "transparent"), aunque el resto de
+//                    secciones sí lo tengan.
 
 interface Props {
   bg: string;
@@ -65,6 +73,7 @@ interface Props {
   contentTransition?: 'slide-horizontal';
   contentThreshold?: number;
   textTransition?: 'fade-up' | 'fade-down' | 'slide-left' | 'slide-right' | 'zoom-in';
+  overlay?: string | false;
 }
 
 const {
@@ -78,7 +87,12 @@ const {
   contentTransition,
   contentThreshold = 0,
   textTransition = 'fade-up',
+  overlay,
 } = Astro.props;
+
+// undefined (prop no pasada) → sin atributo, el motor cliente hereda el
+// overlay por defecto del Stage; false → 'transparent' explícito.
+const overlayAttr = overlay === undefined ? undefined : overlay === false ? 'transparent' : overlay;
 ---
 
 <section
@@ -88,6 +102,7 @@ const {
   data-bg-zoom-scale={bgZoomScale}
   data-content-transition={contentTransition}
   data-content-threshold={contentTransition ? contentThreshold : undefined}
+  data-overlay={overlayAttr}
   id={id}
   style={`min-height:${minH}`}
 >

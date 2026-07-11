@@ -61,4 +61,19 @@ describe('ScrollySection.astro', () => {
     const html = await render({ bg: 'hero' });
     expect(html).not.toContain('data-content-threshold');
   });
+
+  it('sin overlay, no emite data-overlay (el motor hereda el del Stage)', async () => {
+    const html = await render({ bg: 'hero' });
+    expect(html).not.toContain('data-overlay');
+  });
+
+  it('con overlay como valor CSS, lo propaga tal cual en data-overlay', async () => {
+    const html = await render({ bg: 'hero', overlay: 'rgba(0, 0, 0, 0.6)' });
+    expect(html).toContain('data-overlay="rgba(0, 0, 0, 0.6)"');
+  });
+
+  it('con overlay={false}, emite data-overlay="transparent"', async () => {
+    const html = await render({ bg: 'hero', overlay: false });
+    expect(html).toContain('data-overlay="transparent"');
+  });
 });

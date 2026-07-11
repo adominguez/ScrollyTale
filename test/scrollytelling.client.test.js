@@ -139,6 +139,89 @@ describe('scrollytelling.client.js — fondo (fire-and-forget)', () => {
   });
 });
 
+describe('scrollytelling.client.js — overlay por sección', () => {
+  it('en modo fire-and-forget, aplica el data-overlay de la sección activa y hereda el default en las que no lo declaran', async () => {
+    document.body.innerHTML = `
+      <div class="scrolly-overlay" id="scrollyOverlay" style="background:linear-gradient(black, white);"></div>
+      <div class="scrolly-bg is-active" data-bg="hero"></div>
+      <div class="scrolly-bg" data-bg="forest"></div>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade" data-overlay="rgba(0,0,0,0.6)"></section>
+      <section class="scrolly-section" data-bg-target="forest" data-bg-transition="fade"></section>
+    `;
+    const sections = document.querySelectorAll('.scrolly-section');
+    mockRect(sections[0], 0, 100);
+    mockRect(sections[1], 5000, 100);
+
+    await initEngine();
+
+    const overlayEl = document.getElementById('scrollyOverlay');
+    // jsdom normaliza el shorthand `background` añadiendo espacios tras las comas.
+    expect(overlayEl.style.background).toBe('rgba(0, 0, 0, 0.6)');
+
+    mockRect(sections[0], -5000, 100);
+    mockRect(sections[1], 0, 100);
+    setScrollY(100);
+    window.dispatchEvent(new Event('scroll'));
+
+    expect(overlayEl.style.background).toBe('linear-gradient(black, white)');
+  });
+
+  it('con overlay={false} en la sección, aplica "transparent"', async () => {
+    document.body.innerHTML = `
+      <div class="scrolly-overlay" id="scrollyOverlay" style="background:linear-gradient(black, white);"></div>
+      <div class="scrolly-bg is-active" data-bg="hero"></div>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade" data-overlay="transparent"></section>
+    `;
+    mockRect(document.querySelector('.scrolly-section'), 0, 100);
+
+    await initEngine();
+
+    expect(document.getElementById('scrollyOverlay').style.background).toBe('transparent');
+  });
+
+  it('sin #scrollyOverlay en el DOM, no falla', async () => {
+    document.body.innerHTML = `
+      <div class="scrolly-bg is-active" data-bg="hero"></div>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade" data-overlay="rgba(0,0,0,0.6)"></section>
+    `;
+    mockRect(document.querySelector('.scrolly-section'), 0, 100);
+
+    await expect(initEngine()).resolves.not.toThrow();
+  });
+
+  it('en modo scrollSync, aplica el overlay de la sección dominante del par (progress < 0.5 → A, si no B)', async () => {
+    document.body.innerHTML = `
+      <div id="scrollyStage" data-scroll-sync="true"></div>
+      <div class="scrolly-overlay" id="scrollyOverlay" style="background:linear-gradient(black, white);"></div>
+      <div class="scrolly-bg" data-bg="hero"></div>
+      <div class="scrolly-bg" data-bg="forest"></div>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade" data-overlay="rgba(10,10,10,0.5)"></section>
+      <section class="scrolly-section" data-bg-target="forest" data-bg-transition="fade" data-overlay="rgba(20,20,20,0.5)"></section>
+    `;
+    const sections = document.querySelectorAll('.scrolly-section');
+    // Centro (documento) de A en y=0, de B en y=800, scrollY=0 → viewport
+    // center=400 → progress=0.5 → domina B (progress < 0.5 sería A).
+    mockRect(sections[0], 0, 0);
+    mockRect(sections[1], 800, 0);
+    setScrollY(0);
+
+    await initEngine();
+
+    const overlayEl = document.getElementById('scrollyOverlay');
+    expect(overlayEl.style.background).toBe('rgba(20, 20, 20, 0.5)');
+
+    // Usuario scrollea hacia arriba: mismos centros de documento (0 y 800),
+    // pero con scrollY=-300 el centro del viewport cae en 100 → progress
+    // = 100/800 = 0.125 < 0.5 → domina A. rect.top se ajusta para que
+    // rect.top + scrollY siga dando el mismo centro de documento.
+    mockRect(sections[0], 300, 0);
+    mockRect(sections[1], 1100, 0);
+    setScrollY(-300);
+    window.dispatchEvent(new Event('scroll'));
+    expect(overlayEl.style.background).toBe('rgba(10, 10, 10, 0.5)');
+  });
+});
+
 describe('scrollytelling.client.js — reveal de texto (IntersectionObserver)', () => {
   it('alterna in-view según isIntersecting, e ignora inners con data-content-transition', async () => {
     document.body.innerHTML = `

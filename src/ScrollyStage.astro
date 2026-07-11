@@ -48,6 +48,16 @@
 // cuando el usuario está a punto de llegar a la sección que los activa (ver
 // scrollytelling.client.js). Así no se descargan de golpe todos los vídeos
 // de una página al cargarla, solo los que el usuario realmente visita.
+//
+// overlay (opcional, default el gradient oscuro habitual): valor CSS para
+// la propiedad `background` de la capa que va sobre los fondos y debajo del
+// contenido (p.ej. un color plano, otro gradient, o hasta 'transparent').
+// Pásale overlay={false} para no pintar overlay por defecto. Esta prop es
+// solo el FALLBACK: cada <ScrollySection overlay="..."> puede pisarlo para
+// su propia escena (ver ScrollySection.astro), así que unas secciones
+// pueden llevar overlay y otras no dentro del mismo <ScrollyStage>. El
+// motor cliente (scrollytelling.client.js) es quien decide en cada momento
+// qué valor aplicar según la sección más cercana al centro del viewport.
 
 interface Background {
   id: string;
@@ -62,9 +72,13 @@ interface Background {
 interface Props {
   backgrounds: Background[];
   scrollSync?: boolean;
+  overlay?: string | false;
 }
 
-const { backgrounds, scrollSync = false } = Astro.props;
+const DEFAULT_OVERLAY = 'linear-gradient(180deg, rgba(10, 8, 6, 0.35) 0%, rgba(10, 8, 6, 0.55) 100%)';
+
+const { backgrounds, scrollSync = false, overlay = DEFAULT_OVERLAY } = Astro.props;
+const overlayCss = overlay === false ? 'transparent' : overlay;
 ---
 
 <div class="scrolly-stage" id="scrollyStage" data-scroll-sync={scrollSync}>
@@ -94,7 +108,7 @@ const { backgrounds, scrollSync = false } = Astro.props;
       ></div>
     )
   ))}
-  <div class="scrolly-overlay"></div>
+  <div class="scrolly-overlay" id="scrollyOverlay" style={`background:${overlayCss};`}></div>
 </div>
 
 <div class="scrolly-content">
@@ -271,13 +285,13 @@ const { backgrounds, scrollSync = false } = Astro.props;
   .scrolly-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-      180deg,
-      rgba(10, 8, 6, 0.35) 0%,
-      rgba(10, 8, 6, 0.55) 100%
-    );
     pointer-events: none;
     z-index: 5;
+    /* El motor cliente fija style.background según la sección activa (ver
+       resolveOverlay/setOverlay en scrollytelling.client.js); con colores
+       planos esto crossfadea, con gradients el navegador lo trata como
+       discrete (salto a mitad de la transición, sin interpolar los stops). */
+    transition: background 0.5s ease;
   }
   .scrolly-content {
     position: relative;
