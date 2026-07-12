@@ -40,13 +40,15 @@
 // recurso (no en cada resize en vivo, a diferencia del CSS var de
 // imageMobile). poster es opcional y se muestra mientras el vídeo carga.
 //
-// Lazy-load de vídeo: solo el primer fondo (el que se ve desde el primer
-// frame) lleva <source> en el HTML servido, así que el navegador empieza a
-// descargarlo de inmediato. El resto de fondos de vídeo se sirven SIN
-// <source> — solo con la URL guardada en data-video-src/data-video-mobile-
-// src — y es el motor cliente quien crea el <source> y llama a video.load()
-// cuando el usuario está a punto de llegar a la sección que los activa (ver
-// scrollytelling.client.js). Así no se descargan de golpe todos los vídeos
+// Lazy-load de fondos (vídeo e imagen): solo el primer fondo (el que se ve
+// desde el primer frame) lleva la URL ya resuelta en el HTML servido, así
+// que el navegador empieza a descargarla de inmediato. El resto de fondos
+// se sirven SIN referencia descargable — solo con la URL guardada en
+// data-video-src/data-video-mobile-src (vídeo) o data-image-src/
+// data-image-mobile-src (imagen) — y es el motor cliente quien la resuelve
+// (crea el <source> + video.load(), o fija la custom property --bg-image)
+// cuando el usuario está a punto de llegar a la sección que la activa (ver
+// scrollytelling.client.js). Así no se descargan de golpe todos los fondos
 // de una página al cargarla, solo los que el usuario realmente visita.
 //
 // overlay (opcional, default el gradient oscuro habitual): valor CSS para
@@ -104,7 +106,9 @@ const overlayCss = overlay === false ? 'transparent' : overlay;
         class="scrolly-bg"
         class:list={[{ 'is-active': i === 0 }]}
         data-bg={bg.id}
-        style={`--bg-image:url('${bg.image}');${bg.imageMobile ? `--bg-image-mobile:url('${bg.imageMobile}');` : ''}`}
+        style={i === 0 ? `--bg-image:url('${bg.image}');${bg.imageMobile ? `--bg-image-mobile:url('${bg.imageMobile}');` : ''}` : undefined}
+        data-image-src={i === 0 ? undefined : bg.image}
+        data-image-mobile-src={i === 0 ? undefined : bg.imageMobile}
       ></div>
     )
   ))}

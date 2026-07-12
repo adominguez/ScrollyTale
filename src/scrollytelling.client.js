@@ -23,12 +23,13 @@
 //                                                vídeo según qué capa(s)
 //                                                estén visibles, detectando
 //                                                el tag por duck typing, y
-//                                                además carga el <source> de
-//                                                los vídeos que no son la
-//                                                capa inicial de forma lazy,
-//                                                solo cuando el usuario está
-//                                                a punto de llegar a la
-//                                                sección que los activa)
+//                                                además carga de forma lazy
+//                                                el recurso (imagen o vídeo)
+//                                                de las capas que no son la
+//                                                inicial, solo cuando el
+//                                                usuario está a punto de
+//                                                llegar a la sección que
+//                                                las activa)
 //   - .scrolly-section[data-bg-target]         (cada ScrollySection)
 //   - .scrolly-section[data-bg-transition]     (cómo entra el fondo: fade /
 //                                                slide-horizontal / slide-vertical /
@@ -402,15 +403,17 @@ function initScrollytelling() {
   let currentBg = Object.keys(bgLayers).find((id) => bgLayers[id].classList.contains('is-active'));
   if (currentBg) playLayer(bgLayers[currentBg]);
 
-  /* ---------- lazy-load de vídeo: las capas de vídeo que no son la activa
-     al cargar la página vienen del servidor SIN <source> (solo con la URL en
-     data-video-src/data-video-mobile-src, ver ScrollyStage.astro), así que
-     el navegador no descarga nada de ellas todavía. Observamos las
-     secciones que las activan con un rootMargin de un viewport de alto, así
-     que el <source> se inyecta y se llama a video.load() cuando el usuario
-     está a punto de llegar (no cuando la sección ya está en pantalla, para
-     dar tiempo a que el vídeo tenga algo de buffer). Una vez cargada una
-     capa, se deja de observar sus secciones: es un disparo único. ---------- */
+  /* ---------- lazy-load de fondos (vídeo e imagen): las capas que no son
+     la activa al cargar la página vienen del servidor sin recurso
+     descargable (solo con la URL en data-video-src/data-video-mobile-src
+     para vídeo, o data-image-src/data-image-mobile-src para imagen, ver
+     ScrollyStage.astro), así que el navegador no descarga nada de ellas
+     todavía. Observamos las secciones que las activan con un rootMargin de
+     un viewport de alto, así que el recurso se resuelve (se inyecta el
+     <source> + video.load(), o se fija --bg-image) cuando el usuario está a
+     punto de llegar (no cuando la sección ya está en pantalla, para dar
+     tiempo a que cargue). Una vez cargada una capa, se deja de observar sus
+     secciones: es un disparo único. ---------- */
   function loadVideoLayer(video) {
     if (!video || video.querySelector('source')) return;
     if (video.dataset.videoMobileSrc) {
@@ -427,31 +430,48 @@ function initScrollytelling() {
     video.load();
   }
 
-  const pendingVideoIds = Object.keys(bgLayers).filter(
-    (id) => id !== currentBg && isVideoLayer(bgLayers[id]) && bgLayers[id].dataset.videoSrc
-  );
-  let lazyVideoObserver = null;
-  if (pendingVideoIds.length > 0) {
+  function loadImageLayer(div) {
+    if (!div || div.style.getPropertyValue('--bg-image')) return;
+    if (div.dataset.imageSrc) {
+      div.style.setProperty('--bg-image', `url('${div.dataset.imageSrc}')`);
+    }
+    if (div.dataset.imageMobileSrc) {
+      div.style.setProperty('--bg-image-mobile', `url('${div.dataset.imageMobileSrc}')`);
+    }
+  }
+
+  function loadLazyLayer(layer) {
+    if (isVideoLayer(layer)) loadVideoLayer(layer);
+    else loadImageLayer(layer);
+  }
+
+  const pendingLazyIds = Object.keys(bgLayers).filter((id) => {
+    if (id === currentBg) return false;
+    const layer = bgLayers[id];
+    return isVideoLayer(layer) ? !!layer.dataset.videoSrc : !!layer.dataset.imageSrc;
+  });
+  let lazyBgObserver = null;
+  if (pendingLazyIds.length > 0) {
     const sectionsByBg = {};
     sections.forEach((s) => {
       const id = s.dataset.bgTarget;
       (sectionsByBg[id] || (sectionsByBg[id] = [])).push(s);
     });
 
-    lazyVideoObserver = new IntersectionObserver(
+    lazyBgObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (!entry.isIntersecting) return;
           const id = entry.target.dataset.bgTarget;
-          loadVideoLayer(bgLayers[id]);
-          (sectionsByBg[id] || []).forEach((s) => lazyVideoObserver.unobserve(s));
+          loadLazyLayer(bgLayers[id]);
+          (sectionsByBg[id] || []).forEach((s) => lazyBgObserver.unobserve(s));
         });
       },
       { rootMargin: `${window.innerHeight}px 0px` }
     );
 
-    pendingVideoIds.forEach((id) => {
-      (sectionsByBg[id] || []).forEach((s) => lazyVideoObserver.observe(s));
+    pendingLazyIds.forEach((id) => {
+      (sectionsByBg[id] || []).forEach((s) => lazyBgObserver.observe(s));
     });
   }
 
@@ -776,7 +796,7 @@ function initScrollytelling() {
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onScroll);
     revealObserver.disconnect();
-    if (lazyVideoObserver) lazyVideoObserver.disconnect();
+    if (lazyBgObserver) lazyBgObserver.disconnect();
   };
 }
 

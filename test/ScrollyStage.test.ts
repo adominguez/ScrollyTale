@@ -24,10 +24,9 @@ describe('ScrollyStage.astro', () => {
     expect(html).not.toMatch(/class="scrolly-bg is-active"[^>]*data-bg="forest"/);
   });
 
-  it('expone image e imageMobile como custom properties', async () => {
+  it('el primer fondo (index 0) expone image e imageMobile como custom properties inline', async () => {
     const html = await render({ backgrounds });
     expect(html).toContain("--bg-image:url('/bg-hero.webp');");
-    expect(html).toContain("--bg-image:url('/bg-forest.webp');--bg-image-mobile:url('/bg-forest-mobile.webp');");
   });
 
   it('scrollSync por defecto es false y se serializa como string en data-scroll-sync', async () => {
@@ -61,6 +60,34 @@ describe('ScrollyStage.astro — overlay', () => {
   it('overlay={false} deja la capa en el DOM (el motor la necesita para secciones que sí quieran overlay) pero con background transparent', async () => {
     const html = await render({ backgrounds, overlay: false });
     expect(html).toContain('<div class="scrolly-overlay" id="scrollyOverlay" style="background:transparent;"');
+  });
+});
+
+describe('ScrollyStage.astro — backgrounds de imagen: lazy-load', () => {
+  it('el primer fondo (index 0) no lleva data-image-src (ya viene con --bg-image inline)', async () => {
+    const html = await render({ backgrounds });
+    const heroTag = html.match(/<div[^>]*data-bg="hero"[^>]*>/)?.[0] ?? '';
+    expect(heroTag).not.toContain('data-image-src');
+    expect(heroTag).not.toContain('data-image-mobile-src');
+  });
+
+  it('los fondos posteriores al primero no llevan --bg-image inline, solo data-image-src/data-image-mobile-src', async () => {
+    const html = await render({ backgrounds });
+    const forestTag = html.match(/<div[^>]*data-bg="forest"[^>]*>/)?.[0] ?? '';
+    expect(forestTag).not.toContain('--bg-image:');
+    expect(forestTag).toContain('data-image-src="/bg-forest.webp"');
+    expect(forestTag).toContain('data-image-mobile-src="/bg-forest-mobile.webp"');
+  });
+
+  it('sin imageMobile, no incluye data-image-mobile-src', async () => {
+    const html = await render({
+      backgrounds: [
+        { id: 'hero', image: '/bg-hero.webp' },
+        { id: 'forest', image: '/bg-forest.webp' },
+      ],
+    });
+    const forestTag = html.match(/<div[^>]*data-bg="forest"[^>]*>/)?.[0] ?? '';
+    expect(forestTag).not.toContain('data-image-mobile-src');
   });
 });
 

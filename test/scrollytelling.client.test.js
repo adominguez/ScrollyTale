@@ -532,6 +532,78 @@ describe('scrollytelling.client.js — lazy-load de vídeo de fondo', () => {
   });
 });
 
+describe('scrollytelling.client.js — lazy-load de imagen de fondo', () => {
+  function buildLazyImageDom() {
+    document.body.innerHTML = `
+      <div class="scrolly-bg is-active" data-bg="hero" style="--bg-image:url('/hero.webp');"></div>
+      <div class="scrolly-bg" data-bg="forest" data-image-src="/forest.webp" data-image-mobile-src="/forest-mobile.webp"></div>
+      <section class="scrolly-section" data-bg-target="hero" data-bg-transition="fade"></section>
+      <section class="scrolly-section" data-bg-target="forest" data-bg-transition="fade"></section>
+    `;
+    const heroLayer = document.querySelector('[data-bg="hero"]');
+    const forestLayer = document.querySelector('[data-bg="forest"]');
+    const sections = document.querySelectorAll('.scrolly-section');
+    mockRect(sections[0], 0, 100);
+    mockRect(sections[1], 5000, 100);
+    return { heroLayer, forestLayer, heroSection: sections[0], forestSection: sections[1] };
+  }
+
+  function findLazyObserverFor(section) {
+    return FakeIntersectionObserver.instances.find((inst) => inst.elements.includes(section));
+  }
+
+  it('no fija --bg-image en una capa de imagen que no es la activa inicial', async () => {
+    const { forestLayer } = buildLazyImageDom();
+
+    await initEngine();
+
+    expect(forestLayer.style.getPropertyValue('--bg-image')).toBe('');
+  });
+
+  it('al acercarse la sección (IntersectionObserver con rootMargin), fija --bg-image y --bg-image-mobile', async () => {
+    const { forestLayer, forestSection } = buildLazyImageDom();
+
+    await initEngine();
+
+    const lazyObserver = findLazyObserverFor(forestSection);
+    expect(lazyObserver).toBeDefined();
+    lazyObserver.cb([{ isIntersecting: true, target: forestSection }]);
+
+    expect(forestLayer.style.getPropertyValue('--bg-image')).toBe("url('/forest.webp')");
+    expect(forestLayer.style.getPropertyValue('--bg-image-mobile')).toBe("url('/forest-mobile.webp')");
+  });
+
+  it('deja de observar la sección tras cargar la imagen (disparo único)', async () => {
+    const { forestSection } = buildLazyImageDom();
+
+    await initEngine();
+
+    const lazyObserver = findLazyObserverFor(forestSection);
+    lazyObserver.cb([{ isIntersecting: true, target: forestSection }]);
+
+    expect(lazyObserver.elements).not.toContain(forestSection);
+  });
+
+  it('un entry no intersecting no dispara la carga', async () => {
+    const { forestLayer, forestSection } = buildLazyImageDom();
+
+    await initEngine();
+
+    const lazyObserver = findLazyObserverFor(forestSection);
+    lazyObserver.cb([{ isIntersecting: false, target: forestSection }]);
+
+    expect(forestLayer.style.getPropertyValue('--bg-image')).toBe('');
+  });
+
+  it('la capa activa inicial no se observa (ya viene cargada del servidor)', async () => {
+    const { heroSection } = buildLazyImageDom();
+
+    await initEngine();
+
+    expect(findLazyObserverFor(heroSection)).toBeUndefined();
+  });
+});
+
 describe('scrollytelling.client.js — fondo: casos adicionales', () => {
   it('sin capa saliente (currentBg vacío), activa la entrante sin tocar data-enter-from de ninguna otra', async () => {
     document.body.innerHTML = `
