@@ -7,7 +7,11 @@
 // CharacterContent, UnboxContent, ClosingContent) o tu propio HTML.
 //
 // Props:
-//   bg             — id del fondo a activar (debe existir en backgrounds.json)
+//   bg             — id del fondo a activar (debe existir en backgrounds.json).
+//                    Opcional: si no se indica, la sección no lleva
+//                    data-bg-target y el motor cliente la ignora al decidir
+//                    qué fondo mostrar, así que se ve el fondo que ya
+//                    estuviera activo (el de la sección anterior).
 //   align          — "left" | "right" | "center" (alineación del bloque de texto)
 //   minH           — alto mínimo de la sección (admite cualquier valor CSS, ej. "120vh")
 //   width          — max-width del .scrolly-inner (admite cualquier valor CSS,
@@ -63,7 +67,7 @@
 //                    secciones sí lo tengan.
 
 interface Props {
-  bg: string;
+  bg?: string;
   align?: 'left' | 'right' | 'center';
   minH?: string;
   width?: string;

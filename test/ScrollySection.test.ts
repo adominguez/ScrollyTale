@@ -76,4 +76,10 @@ describe('ScrollySection.astro', () => {
     const html = await render({ bg: 'hero', overlay: false });
     expect(html).toContain('data-overlay="transparent"');
   });
+
+  it('sin bg, no emite data-bg-target (la sección hereda el fondo activo)', async () => {
+    const html = await render({});
+    expect(html).not.toContain('data-bg-target');
+    expect(html).toContain('contenido');
+  });
 });

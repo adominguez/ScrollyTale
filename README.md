@@ -48,7 +48,7 @@ const backgrounds = [
 
 | Prop             | Tipo | Default | Descripción |
 | ---------------- | ---- | ------- | ----------- |
-| `bg`             | `string` | — | id del fondo a activar (debe existir en `backgrounds`). |
+| `bg`             | `string` | — | id del fondo a activar (debe existir en `backgrounds`). Opcional: si no se indica, la sección no participa en el cambio de fondo y se ve el que ya estuviera activo. |
 | `align`          | `'left' \| 'right' \| 'center'` | `'center'` | Alineación del bloque de texto. |
 | `minH`           | `string` | `'100vh'` | Alto mínimo de la sección (cualquier valor CSS). |
 | `id`             | `string` | — | id HTML opcional, para anclas. |
